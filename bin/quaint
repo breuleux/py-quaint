@@ -1,0 +1,102 @@
+#!/usr/bin/python3
+
+"""Quaint markup
+
+Usage:
+  quaint (tok|ast|eval) [FILE | -s STR]
+
+Arguments:
+  FILE          Source file.
+
+Options:
+  -h --help     Show this screen.
+  -s STR        Use the provided string instead of a file.
+"""
+
+from docopt import docopt
+
+from descr import boxy_terminus, HTMLRuleBuilder as RB, descr
+from descr.util import Table, Group
+
+# from quaint import parse
+from quaint.operparse import SyntaxError, Source
+from quaint.parser import tokenize
+
+from ug.format import errors
+from ug.format.displayrules import ugdescr, rules
+
+
+class prerror:
+    def __enter__(self):
+        pass
+    def __exit__(self, type, value, traceback):
+        if type is None:
+            return True
+        elif True: # issubclass(type, SyntaxError):
+            rules = RB().pclasses(".{@ErrorPrinter} .location", "C=3")
+            rules.rearrange(".hl1, .hl2, .hl3, .hlE",
+                            lambda classes, children: ["_"]*len(children[0]) if not children[0].strip() else children)
+
+            e = errors.process_error(value)
+            pr = boxy_terminus(rules = rules)
+            if e is None:
+                pr(value)
+                return True
+            else:
+                value.__traceback__ = None
+                pr(e)
+                return True
+
+def get_source(args):
+    if args["FILE"]:
+        try:
+            s = open(args["FILE"]).read()
+            path = args["FILE"]
+        except IOError as e:
+            exit(e)
+    else:
+        s = args["-s"]
+        path = None
+    return s, path
+
+def needs_source(f):
+    def newf(args):
+        s, path = get_source(args)
+        return f(s, path)
+    return newf
+
+@needs_source
+def x_tok(s, path):
+    rules = RB()
+    rules.hide(".source_header")
+    rules.mclasses(".table > * > .{@str}", {"scalar", "@str"})
+    pr = boxy_terminus(rules = rules)
+    things = []
+    for entry in tokenize(Source(s, url = path)):
+        things.append([str(entry), Group([entry.loc])])
+    pr(Table(things))
+
+@needs_source
+def x_ast(s, path):
+    result = parse(Source(s, url = path))
+    pr = boxy_terminus()
+    pr((result), rules = rules, descr = ugdescr)
+
+@needs_source
+def x_eval(s, path):
+    src = Source(s, url = path)
+    ast = parse(src)
+    ast2 = compile(ast)
+    print(evaluate(ast2, source = src))
+
+
+if __name__ == '__main__':
+    args = docopt(__doc__)
+
+    with prerror() as p:
+        for possibility in "tok ast eval".split():
+            if args[possibility]:
+                globals()["x_"+possibility](args)
+                break
+
+
