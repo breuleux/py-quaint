@@ -5,25 +5,22 @@ from .common import Void, TokenizerError, SyntaxError
 from .location import Location, Source
 
 
-
 #################
 ### TOKENIZER ###
 #################
 
 class Token:
-    def __init__(self, kind, args, ws, loc, **kw):
-        self.kind = kind
-        self.args = args
-        self.ws = ws
-        self.loc = loc
-        self.all = [kind, args, ws]
-        self.__dict__.update(kw)
+    def __init__(self, location, *args):
+        self.location = location
+        self.args = list(args)
     def __getitem__(self, i):
-        return self.all[i]
+        return self.args[i]
+    def __setitem__(self, i, value):
+        self.args[i] = value
     def __iter__(self):
-        return iter(self.all)
+        return iter(self.args)
     def __str__(self):
-        return "Token[%s]" % ", ".join(map(str, self.all))
+        return "Token[%s]" % ", ".join(map(repr, self.args))
     def __repr__(self):
         return str(self)
 
@@ -33,7 +30,7 @@ class SubTokenizer:
     SubTokenizer(rules) creates a tokenizer from various rules. Each
     rule is of the form:
 
-        [chrs, regexp, spangroup, [take_wsb, take_wsa], description, action]
+        [chrs, regexp, spangroup, skip_ws, description]
 
         chrs: a list of characters that trigger the rule (whitespace skipped); if True
             then all characters trigger the rule.
@@ -42,39 +39,39 @@ class SubTokenizer:
             of the string corresponding to that group, plus the length of any whitespace
             skipped before it, will be returned as the number of characters to skip
             to get past the token.
-        take_wsb: boolean; if True, then any whitespace characters will be skipped,
-            and their number will be stored in the return Token. Otherwise whitespace
-            is not skipped.
-        take_wsa: same as take_wsb, but for the whitespace after the token.
-        description: a list of things to include as the token's arguments; if
-            a number is given, the string for the corresponding group in the regexp
-            will be inserted. Anything else will be inserted verbatim.
-        action: some action to take when reading the token. It can be either:
-            ["push", subtokenizer_name] to instruct a Tokenizer to switch to some other
-                SubTokenizer.
-            ["pop"] to instruct a Tokenizer to switch back to the SubTokenizer it was
-                using right before this one.
-            These actions are usually needed to pop in and out of a string context.
+        skip_ws: boolean; if True, then any whitespace characters will be skipped
+        description: either a function or a list of integers or strings
+            if function: called with the regexp's match object and returns a list
+                of the token's arguments. If "!wsb" or "!wsa" are in the list, they
+                will be translated as per what follows.
+            if list: becomes the token's arguments, with the following translations:
+                function: replaced by the result of calling the function with the
+                    regexp's match object
+                int: replaced by the string for the corresponding group in the
+                    regexp
+                str: verbatim
+                "!wsb": replaced by the whitespace matched before the string (is null
+                    if skip_ws is False
+                "!wsa": replaced by any whitespace matched *after* the string
 
         Example:
-        >>> st = SubTokenizer([["abc", re.compile("((a)b)(c*)"), 0, [True, True], ["id", "hello", 1, 2], None]])
+        >>> st = SubTokenizer([["abc", re.compile("((a)b)(c*)"), 0, True, ["id", "hello", 1, 2, "!wsa"], None]])
         >>> st.read(Source("  abccccc def"), 0)
-        (Token[id, ['hello', 'a', 'ccccc'], [2, 1]], 4)
+        (Token['id', 'hello', 'a', 'ccccc', ' '], 4)
 
-        i.e. a token of kind "id" with arguments "hello", "a" and
-        "ccccc" (the latter two are the strings associated to groups 1
-        and 2 in the regular expression "((a)b)(c*)"), which has 2
-        whitespaces before (which we skipped because take_wsb is True)
-        and 1 whitespace after. The number 4 corresponds to the length
-        of group 0, i.e. the group "((a)b)" in the regular expression,
-        plus the whitespace before the token, so after reading this
-        token we will have to position ourselves on the first c before
-        reading the next.
+        i.e. a token with arguments "id", "hello", "a" (matching group
+        1), "ccccc" (matching group 2), " " (the whitespace right
+        after it). The number 4 corresponds to the length of group 0,
+        i.e. the group "((a)b)" in the regular expression, plus the
+        whitespace before the token, so after reading this token we
+        will have to position ourselves on the first c before reading
+        the next.
 
-    Rules are tried in order. The first to match is returned. If pos is
-    at the end of the string, [False, 0] is returned. If pos is *not* at
-    the end of the string, and yet no match is found, an exception is
-    raised, so the rules should cover all expected inputs.
+    Rules are tried in order. The first to match is returned. If pos
+    is at the end of the string, [None, 0] is returned. If pos is
+    *not* at the end of the string, and yet no match is found, an
+    exception is raised, so the rules should cover all expected
+    inputs.
 
     Provides the `read(source, pos)` method which, given a Source
     object and an integer position, returns a Token beginning at that
@@ -83,62 +80,114 @@ class SubTokenizer:
     """
 
     def __init__(self, rules, ws_re):
+
         self.ws_re = ws_re
+        self.ws_cache = (-1, None, 0)
+
         self.rules = rules
-        self.rulemap = [[] for i in range(129)]
-        for rule in rules:
-            chars, *rest = rule
-            if chars is True:
-                for i in range(129):
-                    self.rulemap[i].append(rest)
-            else:
-                for c in chars:
-                    i = min(ord(c), 128)
-                    self.rulemap[i].append(rest)
+        self.rulemap = ([[] for i in range(129)],
+                        [[] for i in range(129)])
+        for rulemap, skip_ws in ((self.rulemap[0], False),
+                                 (self.rulemap[1], True)):
+            for rule in rules:
+                chars, rxp, spangroup, rule_skip_ws, descr = rule
+                if skip_ws == rule_skip_ws:
+                    if chars is True:
+                        for i in range(129):
+                            rulemap[i].append(rule[1:])
+                    else:
+                        for c in chars:
+                            i = min(ord(c), 128)
+                            rulemap[i].append(rule[1:])
 
     def ws(self, text, pos):
+        cache_pos, cache_text, length = self.ws_cache
+        if pos == cache_pos and text is cache_text:
+            return length
         ws = self.ws_re.match(text, pos)
         s = ws.span()
-        return s[1] - s[0]
+        length = s[1] - s[0]
+        self.ws_cache = (pos, text, length)
+        return length
 
     def read(self, source, pos):
-        def compute(descr, groups):
-            if isinstance(descr, int):
-                return groups[descr]
-            elif callable(descr):
-                return descr(*groups)
-            else:
-                return descr
+        """
+        source = Source object
+        it is assumed that pos > 0
+        """
 
         text = source.text
         if pos >= len(text):
+            # out of bounds
             return [False, 0]
+
+        # we compute whitespace before once for all rules
         wsb = self.ws(text, pos)
+        
+        # the first pos past whitespace
         pos2 = pos + wsb
-        rules = self.rulemap[min(ord(text[pos2]), 128)]
-        for rxp, spangroup, (take_wsb, take_wsa), descr, action in rules:
-            match = rxp.match(text, pos2 if take_wsb else pos)
+
+        # to speed up processing, self.rulemap associates each ASCII
+        # character to a list of rules that can apply there; there are
+        # two possible starting points: pos and pos2, depending on
+        # whether the rule skips whitespace or not
+        rules = self.rulemap[0][min(ord(text[pos]), 128)]
+        if pos2 < len(text):
+            rules = rules + self.rulemap[1][min(ord(text[pos2]), 128)]
+
+        for rxp, spangroup, skip_ws, descr in rules:
+            match = rxp.match(text, pos2 if skip_ws else pos)
             if match:
                 groups = match.groups()
-                span = match.regs[spangroup + 1]
-                descr = [compute(x, groups) for x in descr]
-                return (Token(descr[0], descr[1:],
-                              (wsb if take_wsb else 0,
-                               self.ws(text, span[1]) if take_wsa else 0),
-                              loc = Location(source, span),
-                              action = action),
-                        (span[1] - pos))
+                # if spangroup == -1:
+                #     start, end = match.regs[]
+                #     wsa = self.ws(text, end)
+                #     start, end = pos, match.regs[0] + wsa
+                # else:
+                start, end = match.regs[spangroup + 1]
+
+                # build argument list
+                if callable(descr):
+                    wsa = self.ws(text, end)
+                    descr = descr(match, text[pos:pos2], text[end:end + wsa])
+                    translate_int = False
+                else:
+                    translate_int = True
+
+                new_descr = []
+                for x in descr:
+                    if translate_int and x == -1:
+                        new_descr.append(text[pos:pos2]
+                                         + groups[0]
+                                         + text[end:end + wsa])
+                        continue
+                    elif translate_int and isinstance(x, int):
+                        new_descr.append(groups[x])
+                        continue
+                    elif callable(x):
+                        x = x(match)
+
+                    if x == '!wsb':
+                        new_descr.append(text[pos:pos2])
+                    elif x == '!wsa':
+                        wsa = self.ws(text, end)
+                        new_descr.append(text[end:end + wsa])
+                    else:
+                        new_descr.append(x)
+
+                return (Token(Location(source, (start, end)),
+                              *new_descr),
+                        end - pos)
+
         if pos + wsb >= len(text):
             return [False, 0]
-        raise TokenizerError['no_token'](source = source,
-                                         pos = pos,
-                                         subtokenizer = self)
+
+        raise TokenizerError['no_token'](
+            source = source,
+            pos = pos,
+            subtokenizer = self)
 
 
-def subtok_rule(chrs, rxp, fields, span = 0, ws = (True, True), action = None):
-    if isinstance(rxp, str):
-        rxp = re.compile("(" + rxp + ")")
-    return (chrs, rxp, span, ws, fields, action)
 
 
 
@@ -147,14 +196,9 @@ class Tokenizer:
     def __init__(self, source, subtok, initial_state = 'normal'):
         self.subtok = subtok
         self.source = source
-
-        self.buffer = []
-        self.buffer_pfx = True
-        self.last = Token("start", (), (0, 0), loc = Location(source, (0, 0)))
         self.mark = 0
         self.stack = []
         self.st = None
-
         self.push_state(initial_state)
 
     def install_state(self, state):
@@ -168,68 +212,36 @@ class Tokenizer:
         if len(self.stack) > 1:
             self.stack.pop()
             self.install_state(self.stack[-1])
-
-    def dump_buffer(self):
-        b = self.buffer
-        def helper(last, i):
-            if i >= len(b):
-                return []
+        
+    def __iter__(self):
+        while True:
+            tok, skip = self.st.read(self.source, self.mark)
+            if skip:
+                self.mark += skip
+            if tok:
+                action = yield tok
+                if action:
+                    command, *args = action
+                    if command == 'pop':
+                        self.pop_state()
+                    elif command == 'push':
+                        self.push_state(args[0])
+                    else:
+                        raise TokenizerError["unknown_action"](
+                            token = results[-1],
+                            action = action)
             else:
-                current = b[i]
-                last = last or Token("n/a", (), (0, 0), loc = Location(self.source, (0, 0)))
-                t1, _, (_, wsr) = last
-                t2, _, (wsl, _) = current
-                pl = last.loc.end
-                pr = current.loc.start
-                ws = Token("infix", ("",), (wsl, wsr), loc = Location(self.source, (pl, pr)))
-                void = Token("id", (Void,), (wsl, wsr), loc = Location(self.source, (pl, pr)))
-                t = t1 + "/" + t2
-                if t in ["id/id"]:
-                    return [ws] + helper(None, i)
-                elif t in ["prefix/infix",
-                           "infix/infix",
-                           "infix/suffix",
-                           "start/prefix",
-                           "start/infix",
-                           "start/suffix",
-                           "infix/prefix",
-                           "suffix/infix",
-                           "prefix/prefix",
-                           "prefix/suffix",
-                           "suffix/suffix"]:
-                    return [void] + helper(None, i)
-                elif t in ["id/prefix"]:
-                    return [ws, void] + helper(None, i)
-                elif t in ["suffix/id"]:
-                    return [void, ws] + helper(None, i)
-                elif t in ["suffix/prefix"]:
-                    return [void, ws, void] + helper(None, i)
-                else:
-                    return [current] + helper(current, i + 1)
+                return
 
-        results = helper(self.last, 0)
 
-        actions = [getattr(tok, "action", None) for tok in results]
-        if [a for a in actions[:-1] if a]:
-            raise SyntaxError['lookahead_action'](tokens = results,
-                                                  actions = actions)
-            # raise Exception("Actions associated to operators should not require lookahead")
-        if actions and actions[-1]:
-            action = actions[-1]
-            command, *args = action
-            if command == 'pop':
-                self.pop_state()
-            elif command == 'push':
-                self.push_state(args[0])
-            else:
-                raise SyntaxError["unknown_action"](token = results[-1],
-                                                    action = action)
-                # raise Exception("Unknown command: " + str(action))
 
+class FixityDisambiguator:
+
+    def __init__(self, tokenizer):
         self.buffer = []
-        if results:
-            self.last = results[-1]
-        return results
+        self.buffer_pfx = True
+        self.tokenizer = tokenizer
+        self.source = self.tokenizer.source
 
     def process_buffer(self, pfx, sfx, start):
         n = len(self.buffer) - start
@@ -238,68 +250,127 @@ class Tokenizer:
         elif pfx and sfx:
             if n > 1:
                 raise SyntaxError["ambiguous_nullary"](operators = self.buffer[start:])
-                # raise Exception("Cannot have more than one operator in this situation.")
             elif n == 1:
                 tok = self.buffer[0]
-                self.buffer[0] = Token("id", ["id"] + tok.args, tok.ws, loc = tok.loc)
+                self.buffer[0] = Token(tok.location, "nullary", *tok[1:])
         elif pfx:
             for i in range(start, len(self.buffer)):
                 tok = self.buffer[i]
-                self.buffer[i] = Token("prefix", tok.args, tok.ws, loc = tok.loc)
+                self.buffer[i] = Token(tok.location, "prefix", *tok[1:])
         elif sfx:
             for i in range(start, len(self.buffer)):
                 tok = self.buffer[i]
-                self.buffer[i] = Token("suffix", tok.args, tok.ws, loc = tok.loc)
+                self.buffer[i] = Token(tok.location, "suffix", *tok[1:])
         else:
             tok = self.buffer[start]
-            wsl, wsr = tok.ws
+            wsl, wsr = tok[1:3]
+            wsl = len(wsl)
+            wsr = len(wsr)
             if (wsl == wsr == 0) or (wsl > 0 and wsr > 0):
-                self.buffer[start] = Token("infix", tok.args, tok.ws, loc = tok.loc)
+                self.buffer[start] = Token(tok.location, "infix", *tok[1:])
                 self.process_buffer(True, sfx, start + 1)
             elif wsl > 0:
-                self.buffer[start] = Token("prefix", tok.args, tok.ws, loc = tok.loc)
+                self.buffer[start] = Token(tok.location, "prefix", *tok[1:])
                 self.process_buffer(True, sfx, start + 1)
             elif wsr > 0:
-                self.buffer[start] = Token("suffix", tok.args, tok.ws, loc = tok.loc)
+                self.buffer[start] = Token(tok.location, "suffix", *tok[1:])
                 self.process_buffer(False, sfx, start + 1)
 
-    def next_batch(self):
-        tok, skip = self.st.read(self.source, self.mark)
-        if skip:
-            self.mark += skip
 
-        assoc = {"id": (False, False),
-                 "infix": (True, True),
+    def __iter__(self):
+        assoc = {"infix": (True, True),
                  "prefix": (False, True),
                  "suffix": (True, False)}
 
-        if tok:
-            if tok.kind in assoc:
-                sfx, newpfx = assoc[tok.kind]
+        for tok in iter(self.tokenizer):
+
+            if tok[0] == "?fix":
+                self.buffer.append(tok)
+
+            else:
+                sfx, newpfx = assoc.get(tok[0], (False, False))
                 self.process_buffer(self.buffer_pfx, sfx, 0)
                 self.buffer.append(tok)
                 self.buffer_pfx = newpfx
-                return self.dump_buffer()
+                for tok in self.buffer:
+                    yield tok
+                self.buffer = []
 
-            elif tok.kind == "?fix":
-                self.buffer.append(tok)
-                return self.next_batch()
-
-        elif self.buffer:
+        if self.buffer:
             self.process_buffer(self.buffer_pfx, True, 0)
-            return self.dump_buffer()
-        elif self.last and self.last.kind != "id":
-            self.last = None
-            return [Token("id", (Void,), (0, 0),
-                          loc = Location(self.source, (self.mark, self.mark)))]
-        else:
-            return False
+            for tok in self.buffer:
+                yield tok
+
+
+class Alternator:
+
+    def __init__(self, tokenizer, void_params, juxt_params):
+        self.tokenizer = tokenizer
+        self.void_params = void_params
+        self.juxt_params = juxt_params
+
+    def sandwich_void(self, left, right):
+        location = Location(left.location.source,
+                            (left.location.end,
+                             right.location.start if right else left.location.end))
+        return Token(location,
+                     self.void_params[0],
+                     left[2], right[1] if right else "",
+                     *self.void_params[1:])
+
+    def sandwich_juxt(self, left, right):
+        location = Location(left.location.source,
+                            (left.location.end, right.location.start))
+        return Token(location,
+                     self.juxt_params[0],
+                     left[2], right[1],
+                     *self.juxt_params[1:])
 
     def __iter__(self):
-        while True:
-            batch = self.next_batch()
-            if batch is False:
-                return
-            for tok in batch:
-                yield tok
+
+        # The beginning of the stream acts like an infix operator
+        last = Token(Location(self.tokenizer.source, (0, 0)),
+                     "infix", "", "")
+
+        for current in self.tokenizer:
+
+            void = self.sandwich_void(last, current)
+            ws = self.sandwich_juxt(last, current)
+
+            t1 = last[0]
+            if not t1.endswith("fix"):
+                t1 = "id"
+            t2 = current[0]
+            if not t2.endswith("fix"):
+                t2 = "id"
+            t = t1 + "/" + t2
+
+            if t in ["id/id"]:
+                yield ws
+            elif t in ["prefix/infix",
+                       "infix/infix",
+                       "infix/suffix",
+                       "infix/prefix",
+                       "suffix/infix",
+                       "prefix/prefix",
+                       "prefix/suffix",
+                       "suffix/suffix"]:
+                yield void
+            elif t in ["id/prefix"]:
+                yield ws
+                yield void
+            elif t in ["suffix/id"]:
+                yield void
+                yield ws
+            elif t in ["suffix/prefix"]:
+                yield void
+                yield ws
+                yield void
+
+            yield current
+            last = current
+
+        if last and last[0].endswith("fix"):
+            yield self.sandwich_void(last, None)
+
 

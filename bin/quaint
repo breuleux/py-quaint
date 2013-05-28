@@ -20,10 +20,10 @@ from descr.util import Table, Group
 
 # from quaint import parse
 from quaint.operparse import SyntaxError, Source
-from quaint.parser import tokenize
+from quaint.parser import tokenize, parse
 
 from ug.format import errors
-from ug.format.displayrules import ugdescr, rules
+from quaint.displayrules import ugdescr, rules
 
 
 class prerror:
@@ -32,7 +32,7 @@ class prerror:
     def __exit__(self, type, value, traceback):
         if type is None:
             return True
-        elif True: # issubclass(type, SyntaxError):
+        elif False:# True: # issubclass(type, SyntaxError):
             rules = RB().pclasses(".{@ErrorPrinter} .location", "C=3")
             rules.rearrange(".hl1, .hl2, .hl3, .hlE",
                             lambda classes, children: ["_"]*len(children[0]) if not children[0].strip() else children)
@@ -73,7 +73,7 @@ def x_tok(s, path):
     pr = boxy_terminus(rules = rules)
     things = []
     for entry in tokenize(Source(s, url = path)):
-        things.append([str(entry), Group([entry.loc])])
+        things.append([str(entry), Group([entry.location])])
     pr(Table(things))
 
 @needs_source
