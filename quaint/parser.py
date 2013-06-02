@@ -45,14 +45,6 @@ def extract_indent(match, wsb, wsa):
 def subtok_rule(chrs, rxp, fields, span = 0, ws = True):
     if isinstance(rxp, str):
         rxp = re.compile("(" + rxp + ")")
-    if isinstance(fields, dict):
-        raise Exception
-        # fields = dict(fields)
-        # fields['space_before'] = wsb_length
-        # fields['space_after'] = wsa_length
-        # fields['height_before'] = lambda *args: 0
-        # fields['height_after'] = lambda *args: 0
-        # fields['own_line'] = False
     return (chrs, rxp, span, ws, fields)
 
 
@@ -97,97 +89,21 @@ def m_id(**others):
     return m_fill_in(type = "id")
 
 
-
-# def m_infix(**others):
-#     d = {"type": "operator",
-#          "fixity": "infix",
-#          "text": 0}
-#     d.update(others)
-#     return d
-
-# def m_unknownfix(**others):
-#     d = {"type": "operator",
-#          "fixity": "?fix",
-#          "text": 0}
-#     d.update(others)
-#     return d
-
-
 standard_matchers = [
-
-    # Operators
 
     # Brackets
     subtok_rule("[{", "[\\[\\{]", m_prefix()),
     subtok_rule("]}", "[\\]\\}]", m_suffix()),
 
-    # subtok_rule("[", "[\\[]", m_prefix()),
-    # subtok_rule("]", "[\\]]", m_suffix()),
-
-    # subtok_rule("{", "[\\{]", m_infix()),
-    # subtok_rule("}", "[\\}]", m_infix()),
-
-
-    # # Predefined operators
-    # subtok_rule(",", ",+", m_infix()),
-    # subtok_rule(";", ";+", m_infix()),
-    # subtok_rule(":", ":+", m_infix()),
-    # subtok_rule("!?", "[!?]+", m_unknownfix()),
-    
     # Generic
     subtok_rule(chr_op, rx_choice(chr_op) + "+", m_unknownfix()),
 
-    # #line breaks
-    # subtok_rule("\n", "(?:\n *){2,}", m_infix(text = "INDENT",
-    #                                           height = lambda *_: 2,
-    #                                           width = extract_indent)),
-    # subtok_rule("\n", "(?:\n *)", m_infix(text = "INDENT",
-    #                                       height = lambda *_: 1,
-    #                                       width = extract_indent)),
-
     # Rest
-    # subtok_rule(True, rx_choice(all_op, negate = True)
-    #             + "+", {"type": "id", "text": -1}),
     subtok_rule(True, rx_choice(all_op, negate = True)
                 + "+", m_id()),
 
     # Don't put anything here. It won't be reached.
 ]
-
-
-
-
-# standard_matchers = [
-
-#     # Operators
-
-#     # []
-#     subtok_rule("[", "\\[", ["prefix", 0]),
-#     subtok_rule("]", "\\]", ["suffix", 0]),
-    
-#     # Generic
-#     subtok_rule("~", "~+" + rx_choice(chr_op) + "+", ["prefix", 0]),
-#     subtok_rule(chr_op, rx_choice(chr_op) + "+~+", ["suffix", 0]),
-#     subtok_rule(chr_op, rx_choice(chr_op) + "+", ["?fix", 0]),
-
-#     # {}
-#     subtok_rule("~", "~+\\{", ["prefix", 0]),
-#     subtok_rule("}", "\\}~+", ["suffix", 0]),
-#     subtok_rule("{", "\\{", ["?fix", 0]),
-#     subtok_rule("}", "\\}", ["?fix", 0]),
-
-#     # Tilde
-#     subtok_rule("~", "~+", ["infix", 0]),
-
-#     #line breaks
-#     subtok_rule("\n", "(?:\n *)+", ["infix", "INDENT", extract_indent]),
-
-#     # Rest
-#     subtok_rule(True, rx_choice(chr_op + list(" ~\n[]{}"), negate = True)
-#                 + "+", ["id", 0]),
-
-#     # Don't put anything here. It won't be reached.
-# ]
 
 subtok_normal = SubTokenizer(
     standard_matchers,
@@ -221,23 +137,9 @@ def adjust_locations(tokenizer):
             token.location = Location(loc.source, (loc.start - len(token.wsb),
                                                    loc.end + len(token.wsa)))
         yield token
-
-# @tokenizer_wrapper
-# def adjust_indent_changes(tokenizer):
-#     last_indent = 0
-#     for token in tokenizer:
-#         # if getattr(token, 'fixity', None) == 'infix' and token.own_line:
-#         if token.type == 'operator' and token.own_line:
-#             indent = token.space_before
-#             if indent > last_indent:
-#                 token.height_before = 2
-#             last_indent = indent
-#         yield token
-
-
         
 @tokenizer_wrapper
-def adjust_indent_changes(tokenizer):
+def add_indent_and_linebreaks(tokenizer):
     current_indent = None
     indent_stack = []
     last = None
@@ -291,7 +193,7 @@ def adjust_indent_changes(tokenizer):
 
 def tokenize(source):
     t = Tokenizer(source, dict(normal = subtok_normal))
-    t = adjust_indent_changes(t)
+    t = add_indent_and_linebreaks(t)
     t = FixityDisambiguator(t)
     t = split_operators(t)
     t = adjust_locations(t)
@@ -300,7 +202,6 @@ def tokenize(source):
                    dict(type = "operator",
                         fixity = "infix",
                         text = ""))
-    # t = adjust_indent_changes(t)
     return t
 
 
@@ -310,8 +211,6 @@ def tokenize(source):
 def make_operators_1(tokenizer):
 
     p_immediate = (1000, 'l', None)
-    # p_inline = (100, 'l', True)
-    # p_linebreak = (10, 'l', True)
 
     priorities = {
         'I(': ((15, 'l', None), (0, 'l', [')I'])),
@@ -328,15 +227,6 @@ def make_operators_1(tokenizer):
             continue
         loc = token.location
         if token.type == 'operator':
-            # if token.text == 'INDENT':
-            #     l = (token.text,
-            #          10
-            #          + token.width * 1e-9
-            #          + (1e-10 if token.height == 1 else 0),
-            #          'l', [token.text])
-            #     r = l
-            #     second_pass = False
-            # else:
 
             if token.text in priorities:
                 l, r = priorities[token.text]
@@ -387,8 +277,6 @@ def finalize_1(x):
 
     if ops[0].args[0]:
         new_tokens = list(make_operators_2(ops, args))
-        # print(new_tokens)
-        # 1/0
         return operator_parse(iter(new_tokens), order, finalize_1)
 
     else:
@@ -423,9 +311,6 @@ def finalize_1(x):
         else:
             raise Exception
 
-        # else:
-        #     r = ast.oper(ops[0].args[1].text, *args)
-
         return r
 
 
@@ -438,10 +323,6 @@ def match_for(c):
 
 
 def make_operators_2(operators, tokens):
-
-    # p0 = (1000, 'l', None)
-    # ps = (300, 'r', None)
-    # pw = (100, 'r', None)
 
     brackets = []
     new_operators = []
@@ -463,16 +344,6 @@ def make_operators_2(operators, tokens):
             return True
         else:
             return False
-
-    # for i, node in enumerate(tokens):
-    #     if isinstance(node, ASTNode) and node.name == 'curly':
-    #         operators[i] = [
-    #             Operator(("{}", 100 if node.space_after else 300, 'l', None),
-    #                      ("{}", 100 if node.space_after else 300, 'l', None),
-    #                      False,
-    #                      node,
-    #                      location = node.location)
-    #             ]
 
     for i, (op, node) in enumerate(zip(operators, tokens)):
 
@@ -507,29 +378,6 @@ def make_operators_2(operators, tokens):
         yield token
 
 
-    # brackets = []
-
-    # def seek_bracket(b, i):
-    #     for op in operators[i:]:
-    #         token = op.args[1]
-    #         if op.args[0] and token.fixity == 'postfix' and token.text == b:
-    #             token.args[0] = False
-                
-    #             return True
-
-    # def match(left, right):
-    #     if right.text == 
-
-
-        # if not op.args[0]:
-        #     continue
-
-        # token = op.args[1]
-        # f = token.fixity
-        # if f == 'prefix':
-        #     pass
-
-
 
 def order(left, right):
 
@@ -549,13 +397,8 @@ def order(left, right):
 
 def parse(source):
     t = tokenize(source)
-    # t = pack_tokens(t, is_multiline_operator)
     t = list(make_operators_1(t))
-    # for x in t:
-    #     print(x)
     p = operator_parse(iter(t), order, finalize_1)
-    # print(p)
-    # return make_ast(p)
     return p
 
 class quaintstr(str):

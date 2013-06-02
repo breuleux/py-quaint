@@ -13,12 +13,6 @@ class Token:
     def __init__(self, **args):
         self.location = None
         self.__dict__.update(args)
-    # def __getitem__(self, i):
-    #     return self.args[i]
-    # def __setitem__(self, i, value):
-    #     self.args[i] = value
-    # def __iter__(self):
-    #     return iter(self.args)
     def __str__(self):
         return "Token%s" % self.__dict__
     def __repr__(self):
@@ -272,23 +266,14 @@ class FixityDisambiguator(TokenizerWrapper):
             elif n == 1:
                 self.buffer[0].fixity = None
                 self.buffer[0].type = "nullary"
-                # tok = self.buffer[0]
-                # self.buffer[0] = Token(tok.location, "nullary", *tok[1:])
         elif pfx:
             for i in range(start, len(self.buffer)):
                 self.buffer[i].fixity = "prefix"
-                # tok = self.buffer[i]
-                # self.buffer[i] = Token(tok.location, "prefix", *tok[1:])
         elif sfx:
             for i in range(start, len(self.buffer)):
                 self.buffer[i].fixity = "suffix"
-                # tok = self.buffer[i]
-                # self.buffer[i] = Token(tok.location, "suffix", *tok[1:])
         else:
             tok = self.buffer[start]
-            # wsl, wsr = tok[1:3]
-            # wsl = len(wsl)
-            # wsr = len(wsr)
             if tok.own_line:
                 wsl = tok.height_before - 1
                 wsr = tok.height_after - 1
@@ -299,15 +284,12 @@ class FixityDisambiguator(TokenizerWrapper):
             if ((wsl is not None and wsr is not None)
                 and ((wsl == wsr == 0) or (wsl > 0 and wsr > 0))):
                 self.buffer[start].fixity = "infix"
-                # self.buffer[start] = Token(tok.location, "infix", *tok[1:])
                 self.process_buffer(True, sfx, start + 1)
             elif wsl is None or wsl > 0:
                 self.buffer[start].fixity = "prefix"
-                # self.buffer[start] = Token(tok.location, "prefix", *tok[1:])
                 self.process_buffer(True, sfx, start + 1)
             elif wsr is None or wsr > 0:
                 self.buffer[start].fixity = "suffix"
-                # self.buffer[start] = Token(tok.location, "suffix", *tok[1:])
                 self.process_buffer(False, sfx, start + 1)
 
 
@@ -362,23 +344,6 @@ class Alternator(TokenizerWrapper):
 
     def sandwich_juxt(self, left, right):
         return sandwich(left, right, self.juxt_params)
-
-    # def sandwich_void(self, left, right):
-    #     location = Location(left.location.source,
-    #                         (left.location.end,
-    #                          right.location.start if right else left.location.end))
-    #     return Token(location = location,
-    #                  space_before = left.space_after,
-    #                  space_after = right.space_before if right else 0,
-    #                  **self.void_params)
-
-    # def sandwich_juxt(self, left, right):
-    #     location = Location(left.location.source,
-    #                         (left.location.end, right.location.start))
-    #     return Token(location = location,
-    #                  space_before = left.space_after,
-    #                  space_after = right.space_before,
-    #                  **self.juxt_params)
 
     def __iter__(self):
 
