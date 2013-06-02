@@ -46,29 +46,9 @@ def pretty_rules():
     rules.css_color(".operator", "#ff8")
     rules.rearrange(".{+oper}", rearrange_oper)
 
-    rules.builder_for(".{+bracket}") \
-        .mclasses("object") \
-        .css_background_color("#f80") \
-        .css_margin("4px") \
-        .css_padding("4px") \
-        .css_border_radius("5px")
 
-    rules.builder_for(".{+bracket} > *") \
-        .css_background_color("#000") \
-        .css_margin_left("2px") \
-        .css_margin_right("2px") \
-        .css_border_radius("5px")
-
-    rules.builder_for(".{+bracket} > :first-child") \
-        .css_background_color("#f80") \
-        .css_color("#000") \
-        .css_font_weight("bold")
-
-    # Boxes
-    for cls, color in [(".{+square}", "#f80"),
-                       (".{+curly}", "#0a0"),
-                       (".{+begin}", "#08f"),
-                       (".{+seq}", "#f80")]:
+    for cls, color in [(".{+bracket}", "#f80"),
+                       (".{+block}", "#08f")]:
 
         rules.builder_for(cls) \
             .mclasses("object") \
@@ -83,13 +63,43 @@ def pretty_rules():
             .css_margin_right("2px") \
             .css_border_radius("5px")
 
-    rules.css_margin_top(".{+begin} > *", "6px")
-    rules.css_margin_bottom(".{+begin} > *", "6px")
+        rules.builder_for(cls + " > :first-child") \
+            .css_background_color(color) \
+            .css_color("#000") \
+            .css_font_weight("bold")
+
+
+    # # Boxes
+    # for cls, color in [(".{+square}", "#f80"),
+    #                    (".{+curly}", "#0a0"),
+    #                    (".{+begin}", "#08f"),
+    #                    (".{+seq}", "#f80")]:
+
+    #     rules.builder_for(cls) \
+    #         .mclasses("object") \
+    #         .css_background_color(color) \
+    #         .css_margin("4px") \
+    #         .css_padding("4px") \
+    #         .css_border_radius("5px")
+
+    #     rules.builder_for(cls + " > *") \
+    #         .css_background_color("#000") \
+    #         .css_margin_left("2px") \
+    #         .css_margin_right("2px") \
+    #         .css_border_radius("5px")
+
+    rules.css_margin_top(".{+block} > *", "6px")
+    rules.css_margin_bottom(".{+block} > *", "6px")
 
     # Begin
-    rules.css_display(".{+begin} > *", "block")
+    rules.css_display(".{+block} > *", "block")
 
-    rules.hide(".{+void}")
+    # rules.hide(".{+void}")
+
+    rules.mclasses(".{+void}", "object")
+    rules.pclasses(".{+void}", "identifier")
+    rules.rearrange(".{+void}", lambda classes, contents: "\u2205")
+    rules.css_color(".{+void}", "#888")
 
     return rules
 

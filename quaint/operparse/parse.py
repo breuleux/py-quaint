@@ -25,7 +25,7 @@ class Operator:
 
 
 
-def operator_parse(tokenizer, order):
+def operator_parse(tokenizer, order, finalize):
     """
     Operator parsing
 
@@ -112,9 +112,9 @@ def operator_parse(tokenizer, order):
             elif o == 'r':
                 def new_make_left(*right, aggregate = None):
                     if aggregate is None:
-                        this = [right_op, between] + list(right)
+                        this = finalize([right_op, between] + list(right))
                     else:
-                        this = [[right_op] + aggregate, between] + list(right)
+                        this = finalize([[right_op] + aggregate, between] + list(right))
                     return left_op, this, make_left
                 next_id = next(tokenizer)
                 try:

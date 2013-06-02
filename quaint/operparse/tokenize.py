@@ -10,17 +10,17 @@ from .location import Location, Source
 #################
 
 class Token:
-    def __init__(self, location, *args):
-        self.location = location
-        self.args = list(args)
-    def __getitem__(self, i):
-        return self.args[i]
-    def __setitem__(self, i, value):
-        self.args[i] = value
-    def __iter__(self):
-        return iter(self.args)
+    def __init__(self, **args):
+        self.location = None
+        self.__dict__.update(args)
+    # def __getitem__(self, i):
+    #     return self.args[i]
+    # def __setitem__(self, i, value):
+    #     self.args[i] = value
+    # def __iter__(self):
+    #     return iter(self.args)
     def __str__(self):
-        return "Token[%s]" % ", ".join(map(repr, self.args))
+        return "Token%s" % self.__dict__
     def __repr__(self):
         return str(self)
 
@@ -145,38 +145,37 @@ class SubTokenizer:
                 #     start, end = pos, match.regs[0] + wsa
                 # else:
                 start, end = match.regs[spangroup + 1]
+                wsa = self.ws(text, end)
 
                 # build argument list
                 if callable(descr):
-                    wsa = self.ws(text, end)
                     descr = descr(match, text[pos:pos2], text[end:end + wsa])
                     translate_int = False
                 else:
                     translate_int = True
 
-                new_descr = []
-                for x in descr:
+                new_descr = {}
+                for k, x in descr.items():
                     if translate_int and x == -1:
-                        new_descr.append(text[pos:pos2]
-                                         + groups[0]
-                                         + text[end:end + wsa])
+                        new_descr[k] = (text[pos:pos2]
+                                        + groups[0]
+                                        + text[end:end + wsa])
                         continue
                     elif translate_int and isinstance(x, int):
-                        new_descr.append(groups[x])
+                        new_descr[k] = groups[x]
                         continue
                     elif callable(x):
-                        x = x(match)
+                        x = x(match, text[pos:pos2], text[end:end + wsa])
 
                     if x == '!wsb':
-                        new_descr.append(text[pos:pos2])
+                        new_descr[k] = text[pos:pos2]
                     elif x == '!wsa':
-                        wsa = self.ws(text, end)
-                        new_descr.append(text[end:end + wsa])
+                        new_descr[k] = text[end:end + wsa]
                     else:
-                        new_descr.append(x)
+                        new_descr[k] = x
 
-                return (Token(Location(source, (start, end)),
-                              *new_descr),
+                return (Token(location = Location(source, (start, end)),
+                              **new_descr),
                         end - pos)
 
         if pos + wsb >= len(text):
@@ -234,14 +233,34 @@ class Tokenizer:
                 return
 
 
+class TokenizerWrapper:
 
-class FixityDisambiguator:
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+        self.source = self.tokenizer.source
+
+
+class GenericTokenizerWrapper(TokenizerWrapper):
+
+    def __init__(self, tokenizer, f):
+        super().__init__(tokenizer)
+        self.f = f
+
+    def __iter__(self):
+        for x in self.f(self.tokenizer):
+            yield x
+
+def tokenizer_wrapper(f):
+    return lambda tokenizer: GenericTokenizerWrapper(tokenizer, f)
+
+
+
+class FixityDisambiguator(TokenizerWrapper):
 
     def __init__(self, tokenizer):
         self.buffer = []
         self.buffer_pfx = True
-        self.tokenizer = tokenizer
-        self.source = self.tokenizer.source
+        super().__init__(tokenizer)
 
     def process_buffer(self, pfx, sfx, start):
         n = len(self.buffer) - start
@@ -251,29 +270,44 @@ class FixityDisambiguator:
             if n > 1:
                 raise SyntaxError["ambiguous_nullary"](operators = self.buffer[start:])
             elif n == 1:
-                tok = self.buffer[0]
-                self.buffer[0] = Token(tok.location, "nullary", *tok[1:])
+                self.buffer[0].fixity = None
+                self.buffer[0].type = "nullary"
+                # tok = self.buffer[0]
+                # self.buffer[0] = Token(tok.location, "nullary", *tok[1:])
         elif pfx:
             for i in range(start, len(self.buffer)):
-                tok = self.buffer[i]
-                self.buffer[i] = Token(tok.location, "prefix", *tok[1:])
+                self.buffer[i].fixity = "prefix"
+                # tok = self.buffer[i]
+                # self.buffer[i] = Token(tok.location, "prefix", *tok[1:])
         elif sfx:
             for i in range(start, len(self.buffer)):
-                tok = self.buffer[i]
-                self.buffer[i] = Token(tok.location, "suffix", *tok[1:])
+                self.buffer[i].fixity = "suffix"
+                # tok = self.buffer[i]
+                # self.buffer[i] = Token(tok.location, "suffix", *tok[1:])
         else:
             tok = self.buffer[start]
-            wsl, wsr = tok[1:3]
-            wsl = len(wsl)
-            wsr = len(wsr)
-            if (wsl == wsr == 0) or (wsl > 0 and wsr > 0):
-                self.buffer[start] = Token(tok.location, "infix", *tok[1:])
+            # wsl, wsr = tok[1:3]
+            # wsl = len(wsl)
+            # wsr = len(wsr)
+            if tok.own_line:
+                wsl = tok.height_before - 1
+                wsr = tok.height_after - 1
+            else:
+                wsl = tok.space_before if not tok.height_before else None
+                wsr = tok.space_after if not tok.height_after else None
+                
+            if ((wsl is not None and wsr is not None)
+                and ((wsl == wsr == 0) or (wsl > 0 and wsr > 0))):
+                self.buffer[start].fixity = "infix"
+                # self.buffer[start] = Token(tok.location, "infix", *tok[1:])
                 self.process_buffer(True, sfx, start + 1)
-            elif wsl > 0:
-                self.buffer[start] = Token(tok.location, "prefix", *tok[1:])
+            elif wsl is None or wsl > 0:
+                self.buffer[start].fixity = "prefix"
+                # self.buffer[start] = Token(tok.location, "prefix", *tok[1:])
                 self.process_buffer(True, sfx, start + 1)
-            elif wsr > 0:
-                self.buffer[start] = Token(tok.location, "suffix", *tok[1:])
+            elif wsr is None or wsr > 0:
+                self.buffer[start].fixity = "suffix"
+                # self.buffer[start] = Token(tok.location, "suffix", *tok[1:])
                 self.process_buffer(False, sfx, start + 1)
 
 
@@ -283,12 +317,13 @@ class FixityDisambiguator:
                  "suffix": (True, False)}
 
         for tok in iter(self.tokenizer):
+            fixity = getattr(tok, 'fixity', None)
 
-            if tok[0] == "?fix":
+            if fixity == "?fix":
                 self.buffer.append(tok)
 
             else:
-                sfx, newpfx = assoc.get(tok[0], (False, False))
+                sfx, newpfx = assoc.get(fixity, (False, False))
                 self.process_buffer(self.buffer_pfx, sfx, 0)
                 self.buffer.append(tok)
                 self.buffer_pfx = newpfx
@@ -302,47 +337,66 @@ class FixityDisambiguator:
                 yield tok
 
 
-class Alternator:
+def sandwich(left, right, params):
+    location = Location(left.location.source if left else right.location.source,
+                        (left.location.end if left else right.location.start,
+                         right.location.start if right else left.location.end))
+    return Token(location = location,
+                 space_before = left.space_after if left else 0,
+                 space_after = right.space_before if right else 0,
+                 own_line = ((not left or left.height_after)
+                             and (not right or right.height_before)),
+                 height_before = left.height_after if left else 0,
+                 height_after = right.height_before if right else 0,
+                 **params)
+
+class Alternator(TokenizerWrapper):
 
     def __init__(self, tokenizer, void_params, juxt_params):
-        self.tokenizer = tokenizer
         self.void_params = void_params
         self.juxt_params = juxt_params
+        super().__init__(tokenizer)
 
     def sandwich_void(self, left, right):
-        location = Location(left.location.source,
-                            (left.location.end,
-                             right.location.start if right else left.location.end))
-        return Token(location,
-                     self.void_params[0],
-                     left[2], right[1] if right else "",
-                     *self.void_params[1:])
+        return sandwich(left, right, self.void_params)
 
     def sandwich_juxt(self, left, right):
-        location = Location(left.location.source,
-                            (left.location.end, right.location.start))
-        return Token(location,
-                     self.juxt_params[0],
-                     left[2], right[1],
-                     *self.juxt_params[1:])
+        return sandwich(left, right, self.juxt_params)
+
+    # def sandwich_void(self, left, right):
+    #     location = Location(left.location.source,
+    #                         (left.location.end,
+    #                          right.location.start if right else left.location.end))
+    #     return Token(location = location,
+    #                  space_before = left.space_after,
+    #                  space_after = right.space_before if right else 0,
+    #                  **self.void_params)
+
+    # def sandwich_juxt(self, left, right):
+    #     location = Location(left.location.source,
+    #                         (left.location.end, right.location.start))
+    #     return Token(location = location,
+    #                  space_before = left.space_after,
+    #                  space_after = right.space_before,
+    #                  **self.juxt_params)
 
     def __iter__(self):
 
         # The beginning of the stream acts like an infix operator
-        last = Token(Location(self.tokenizer.source, (0, 0)),
-                     "infix", "", "")
+        last = Token(location = Location(self.tokenizer.source, (0, 0)),
+                     fixity = "infix",
+                     space_before = 0,
+                     space_after = 0,
+                     height_before = 0,
+                     height_after = 0)
 
         for current in self.tokenizer:
 
             void = self.sandwich_void(last, current)
             ws = self.sandwich_juxt(last, current)
 
-            t1 = last[0]
-            if not t1.endswith("fix"):
-                t1 = "id"
-            t2 = current[0]
-            if not t2.endswith("fix"):
-                t2 = "id"
+            t1 = getattr(last, "fixity", None) or "id"
+            t2 = getattr(current, "fixity", None) or "id"
             t = t1 + "/" + t2
 
             if t in ["id/id"]:
@@ -370,7 +424,7 @@ class Alternator:
             yield current
             last = current
 
-        if last and last[0].endswith("fix"):
+        if last and last.type == 'operator':
             yield self.sandwich_void(last, None)
 
 
