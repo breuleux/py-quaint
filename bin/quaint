@@ -21,6 +21,7 @@ from descr.util import Table, Group
 # from quaint import parse
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
+from quaint.engine import evaluate
 
 from ug.format import errors
 from quaint.displayrules import ugdescr, rules
@@ -84,10 +85,8 @@ def x_ast(s, path):
 
 @needs_source
 def x_eval(s, path):
-    src = Source(s, url = path)
-    ast = parse(src)
-    ast2 = compile(ast)
-    print(evaluate(ast2, source = src))
+    result = parse(Source(s, url = path))
+    print("\x1B[?0;7y:h " + evaluate(result) + "\a")
 
 
 if __name__ == '__main__':

@@ -84,7 +84,7 @@ class SubTokenizer:
         for rulemap, skip_ws in ((self.rulemap[0], False),
                                  (self.rulemap[1], True)):
             for rule in rules:
-                chars, rxp, spangroup, rule_skip_ws, descr = rule
+                chars, rxp, spangroup, skipgroup, rule_skip_ws, descr = rule
                 if skip_ws == rule_skip_ws:
                     if chars is True:
                         for i in range(129):
@@ -129,21 +129,19 @@ class SubTokenizer:
         if pos2 < len(text):
             rules = rules + self.rulemap[1][min(ord(text[pos2]), 128)]
 
-        for rxp, spangroup, skip_ws, descr in rules:
+        for rxp, spangroup, skipgroup, skip_ws, descr in rules:
             match = rxp.match(text, pos2 if skip_ws else pos)
             if match:
                 groups = match.groups()
-                # if spangroup == -1:
-                #     start, end = match.regs[]
-                #     wsa = self.ws(text, end)
-                #     start, end = pos, match.regs[0] + wsa
-                # else:
+                tstart, tend = match.regs[0]
                 start, end = match.regs[spangroup + 1]
                 wsa = self.ws(text, end)
+                if spangroup == -1:
+                    start, end = pos, tend + wsa
 
                 # build argument list
                 if callable(descr):
-                    descr = descr(match, text[pos:pos2], text[end:end + wsa])
+                    descr = descr(match, text[pos:pos2], text[tend:tend + wsa])
                     translate_int = False
                 else:
                     translate_int = True
@@ -153,24 +151,25 @@ class SubTokenizer:
                     if translate_int and x == -1:
                         new_descr[k] = (text[pos:pos2]
                                         + groups[0]
-                                        + text[end:end + wsa])
+                                        + text[tend:tend + wsa])
                         continue
                     elif translate_int and isinstance(x, int):
                         new_descr[k] = groups[x]
                         continue
                     elif callable(x):
-                        x = x(match, text[pos:pos2], text[end:end + wsa])
+                        x = x(match, text[pos:pos2], text[tend:tend + wsa])
 
                     if x == '!wsb':
                         new_descr[k] = text[pos:pos2]
                     elif x == '!wsa':
-                        new_descr[k] = text[end:end + wsa]
+                        new_descr[k] = text[tend:tend + wsa]
                     else:
                         new_descr[k] = x
 
+                _, end2 = match.regs[skipgroup + 1]
                 return (Token(location = Location(source, (start, end)),
                               **new_descr),
-                        end - pos)
+                        end2 - pos)
 
         if pos + wsb >= len(text):
             return [False, 0]
@@ -257,6 +256,7 @@ class FixityDisambiguator(TokenizerWrapper):
         super().__init__(tokenizer)
 
     def process_buffer(self, pfx, sfx, start):
+        # print("fuck", pfx, sfx, self.buffer and self.buffer[start])
         n = len(self.buffer) - start
         if n == 0:
             return
@@ -275,12 +275,15 @@ class FixityDisambiguator(TokenizerWrapper):
         else:
             tok = self.buffer[start]
             if tok.own_line:
-                wsl = tok.height_before - 1
-                wsr = tok.height_after - 1
+                if tok.line_operator:
+                    wsl = tok.height_before - 1
+                    wsr = tok.height_after - 1
+                else:
+                    wsl, wsr = 0, 1
             else:
                 wsl = tok.space_before if not tok.height_before else None
                 wsr = tok.space_after if not tok.height_after else None
-                
+
             if ((wsl is not None and wsr is not None)
                 and ((wsl == wsr == 0) or (wsl > 0 and wsr > 0))):
                 self.buffer[start].fixity = "infix"
@@ -294,9 +297,10 @@ class FixityDisambiguator(TokenizerWrapper):
 
 
     def __iter__(self):
-        assoc = {"infix": (True, True),
-                 "prefix": (False, True),
-                 "suffix": (True, False)}
+        # assoc = {"infix": (True, True),
+        #          "prefix": (False, True),
+        #          "suffix": (True, False)}
+        assoc = {}
 
         for tok in iter(self.tokenizer):
             fixity = getattr(tok, 'fixity', None)
@@ -320,6 +324,7 @@ class FixityDisambiguator(TokenizerWrapper):
 
 
 def sandwich(left, right, params):
+    # TODO: change the locations of left and right
     location = Location(left.location.source if left else right.location.source,
                         (left.location.end if left else right.location.start,
                          right.location.start if right else left.location.end))
@@ -330,6 +335,8 @@ def sandwich(left, right, params):
                              and (not right or right.height_before)),
                  height_before = left.height_after if left else 0,
                  height_after = right.height_before if right else 0,
+                 wsb = left.wsa if left else "",
+                 wsa = right.wsb if right else "",
                  **params)
 
 class Alternator(TokenizerWrapper):
@@ -350,6 +357,8 @@ class Alternator(TokenizerWrapper):
         # The beginning of the stream acts like an infix operator
         last = Token(location = Location(self.tokenizer.source, (0, 0)),
                      fixity = "infix",
+                     wsb = "",
+                     wsa = "",
                      space_before = 0,
                      space_after = 0,
                      height_before = 0,
@@ -377,15 +386,16 @@ class Alternator(TokenizerWrapper):
                 yield void
             elif t in ["id/prefix"]:
                 yield ws
-                yield void
+                yield self.sandwich_void(ws, current)
             elif t in ["suffix/id"]:
                 yield void
-                yield ws
+                yield self.sandwich_juxt(void, current)
             elif t in ["suffix/prefix"]:
                 yield void
+                ws = self.sandwich_juxt(void, current)
                 yield ws
-                yield void
-
+                yield self.sandwich_void(ws, current)
+                
             yield current
             last = current
 

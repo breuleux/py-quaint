@@ -25,6 +25,9 @@ class Source(object):
                                                    source = self,
                                                    length = len(self.text)))
 
+    def substring(self, start, end):
+        return self.text[start:end]
+
     def __descr__(self, recurse):
         if self.url is None:
             return [self.text]
@@ -54,6 +57,9 @@ class Location(object):
 
     # def __len__(self):
     #     return self.span[1] - self.span[0]
+
+    def get(self):
+        return self.source.substring(self.start, self.end)
 
     def linecol(self):
 

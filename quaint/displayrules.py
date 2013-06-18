@@ -1,11 +1,12 @@
 
 from types import FunctionType, MethodType
 from descr import descr, HTMLRuleBuilder as RB
-from .parser import ASTNode
+from . import ast
+
 
 def ugdescr(x, recurse = None):
     v = descr(x, ugdescr)
-    if isinstance(x, ASTNode):
+    if isinstance(x, ast.ASTNode):
         if hasattr(x, "location"):
             return [{"$located"}] + list(v)
         else:
@@ -22,33 +23,33 @@ def pretty_rules():
     rules = RB()
 
     # Scalars and identifiers
-    rules.pmclasses(".{@ASTNode} .{@str}", "identifier", {"@str", "scalar"})
+    rules.pmclasses(".{@quaint.ast} .{@str}", "identifier", {"@str", "scalar"})
     rules.css_padding(".identifier, .{@int}, .{$lib}", "4px")
     rules.css_color(".{$lib}", "#8f8")
 
-    # Operators and juxtaposition
-    for cls, color in [(".{+oper}", "#ff8"),
-                       (".{+juxt}", "#fff"),
-                       (".{+send}", "#fff")]:
-        rules.mclasses(cls, "object")
-        rules.css_border_bottom(".{+oper}" + " > * > " + cls, "2px solid " + color)
-        rules.css_border_bottom(".{+juxt}" + " > * > " + cls, "2px solid " + color)
-        rules.css_border_bottom(".{+send}" + " > * > " + cls, "2px solid " + color)
-        rules.css_margin(cls, "6px")
+    # # Operators and juxtaposition
+    # for cls, color in [(".{+oper}", "#ff8"),
+    #                    (".{+juxt}", "#fff"),
+    #                    (".{+send}", "#fff")]:
+    #     rules.mclasses(cls, "object")
+    #     rules.css_border_bottom(".{+oper}" + " > * > " + cls, "2px solid " + color)
+    #     rules.css_border_bottom(".{+juxt}" + " > * > " + cls, "2px solid " + color)
+    #     rules.css_border_bottom(".{+send}" + " > * > " + cls, "2px solid " + color)
+    #     rules.css_margin(cls, "6px")
 
-    def rearrange_oper(classes, children):
-        op = children[0]
-        results = [children[1]]
-        for child in children[2:]:
-            results += [[{"operator"}, op], child]
-        return results
+    # def rearrange_oper(classes, children):
+    #     op = children[0]
+    #     results = [children[1]]
+    #     for child in children[2:]:
+    #         results += [[{"operator"}, op], child]
+    #     return results
 
-    rules.css_color(".operator", "#ff8")
-    rules.rearrange(".{+oper}", rearrange_oper)
+    # rules.css_color(".operator", "#ff8")
+    # rules.rearrange(".{+oper}", rearrange_oper)
 
 
-    for cls, color in [(".{+bracket}", "#f80"),
-                       (".{+block}", "#08f")]:
+    for cls, color in [(".{@quaint.ast.InlineOp}", "#f80"),
+                       (".{@quaint.ast.BlockOp}", "#08f")]:
 
         rules.builder_for(cls) \
             .mclasses("object") \
@@ -88,18 +89,18 @@ def pretty_rules():
     #         .css_margin_right("2px") \
     #         .css_border_radius("5px")
 
-    rules.css_margin_top(".{+block} > *", "6px")
-    rules.css_margin_bottom(".{+block} > *", "6px")
+    rules.css_margin_top(".{@quaint.ast.BlockOp} > *", "6px")
+    rules.css_margin_bottom(".{@quaint.ast.BlockOp} > *", "6px")
 
     # Begin
-    rules.css_display(".{+block} > *", "block")
+    rules.css_display(".{@quaint.ast.BlockOp} > *", "block")
 
     # rules.hide(".{+void}")
 
-    rules.mclasses(".{+void}", "object")
-    rules.pclasses(".{+void}", "identifier")
-    rules.rearrange(".{+void}", lambda classes, contents: "\u2205")
-    rules.css_color(".{+void}", "#888")
+    rules.mclasses(".{@quaint.ast.Void}", "object")
+    rules.pclasses(".{@quaint.ast.Void}", "identifier")
+    rules.rearrange(".{@quaint.ast.Void}", lambda classes, contents: "\u2205")
+    rules.css_color(".{@quaint.ast.Void}", "#888")
 
     return rules
 
