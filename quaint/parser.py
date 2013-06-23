@@ -4,7 +4,7 @@ import re
 from .operparse import (
     SubTokenizer, Tokenizer, Token, Void, SyntaxError,
     FixityDisambiguator, Alternator, Location, TokenizerWrapper,
-    tokenizer_wrapper, sandwich
+    tokenizer_wrapper
     )
 from .operparse.parse import Operator, operator_parse
 from . import ast
@@ -21,7 +21,7 @@ chr_op = r"""
 
 all_op = chr_op + """
 ~ \n [ ] { }
-""".split(" ") + [" "]
+""".split(" ") #+ [" "]
 
 def rx_choice(chars, negate = False):
     return "[" + ("^" if negate else "") + "".join(map(re.escape, chars)) + "]"
@@ -43,71 +43,84 @@ def extract_indent(match, wsb, wsa):
     s = match.group(0)
     return len(s.split("\n")[-1])
 
-def subtok_rule(chrs, rxp, fields, span = 0, skip = 0, ws = True):
+def mkre(rxp):
     if isinstance(rxp, str):
         rxp = re.compile("(" + rxp + ")")
-    return (chrs, rxp, span, skip, ws, fields)
+    return rxp
 
 
-def m_fill_in(**others):
-    def f(m, wsb, wsa):
-        args = dict(others)
-        groups = m.groups()
-        s_wsb = wsb.split("\n")
-        s_wsa = wsa.split("\n")
-        own_line = (len(s_wsb) > 1) and (len(s_wsa) > 1)
-        spangroup = args.pop("text", 0)
-        if spangroup == -1:
-            text = wsb + groups[0] + wsa
-        else:
-            text = groups[spangroup]
-        line_operator = own_line and len(text) >= 3
-        d = {"text": text,
-             "wsb": wsb,
-             "wsa": wsa,
-             "space_before": len(s_wsb[-1]),
-             "space_after": len(s_wsa[0]),
-             "own_line": own_line,
-             "line_operator": line_operator,
-             "height_before": len(s_wsb) - 1,
-             "height_after": len(s_wsa) - 1}
-        d.update(args)
-        return d
+def analyze_whitespace(wsb, wsa):
+    s_wsb = wsb.split("\n")
+    s_wsa = wsa.split("\n")
+    return {"wsb": wsb,
+            "wsa": wsa,
+            "space_before": len(s_wsb[-1]),
+            "space_after": len(s_wsa[0]),
+            "height_before": len(s_wsb) - 1,
+            "height_after": len(s_wsa) - 1}
+
+def make_token(source, start, end, d):
+    loc = Location(source, (start, end))
+    token = Token(location = loc, **d)
+    return token
+
+
+def m_id(source, m, wsb, wsa):
+
+    text = wsb + m.groups()[0] + wsa
+    start, end = m.regs[0]
+    start -= len(wsb)
+    end += len(wsa)
+
+    d = {"type": "id",
+         "text": text,
+         # "own_line": False,
+         "line_operator": False}
+    d.update(analyze_whitespace(wsb, wsa))
+
+    return make_token(source, start, end, d), m.regs[0][1]
+
+
+def m_operator(fixity):
+
+    def f(source, m, wsb, wsa):
+        text = m.groups()[0]
+        start, end = m.regs[0]
+        d = {"type": "operator",
+             "fixity": fixity,
+             "text": text}
+        d.update(analyze_whitespace(wsb, wsa))
+
+        token = make_token(source, start, end, d)
+        token.line_operator = ((token.height_before > 0)
+                               and (token.height_after > 0)
+                               and (len(text) >= 3))
+        # token.own_line = token.line_operator
+
+        return token, m.regs[0][1]
+
     return f
 
-def m_operator(fixity, **others):
-    return m_fill_in(type = 'operator',
-                     fixity = fixity,
-                     **others)
-
-def m_prefix(**others):
-    return m_operator("prefix", **others)
-
-def m_suffix(**others):
-    return m_operator("suffix", **others)
-
-def m_infix(**others):
-    return m_operator("infix", **others)
-
-def m_unknownfix(**others):
-    return m_operator("?fix", **others)
-
-def m_id(**others):
-    return m_fill_in(text = -1, type = "id")
 
 
 standard_matchers = [
 
     # Brackets
-    subtok_rule("[{", "[\\[\\{]", m_prefix()),
-    subtok_rule("]}", "[\\]\\}]", m_suffix()),
+    ("[{", mkre("[\\[\\{]"), True, m_operator("prefix")),
+    ("]}", mkre("[\\]\\}]"), True, m_operator("suffix")),
 
     # Generic
-    subtok_rule(chr_op, rx_choice(chr_op) + "+", m_unknownfix()),
+    (chr_op, mkre(rx_choice(chr_op) + "+"), True, m_operator("?fix")),
 
     # Rest
-    subtok_rule(True, rx_choice(all_op, negate = True)
-                + "+", m_id(), span = -1, skip = 0),
+    (True, mkre("(\\\\{chr}|{nochr})+".format(
+                chr = rx_choice(all_op + [" "]),
+                nochr = rx_choice(all_op + [" "], negate = True))),
+     True, m_id),
+
+    # (True, mkre(rx_choice(all_op, negate = True) + "*"
+    #             + rx_choice(all_op + [" "], negate = True)),
+    #  True, m_id),
 
     # Don't put anything here. It won't be reached.
 ]
@@ -120,8 +133,6 @@ subtok_normal = SubTokenizer(
 @tokenizer_wrapper
 def split_operators(tokenizer):
     for token in tokenizer:
-        # if token.type == 'operator' and (not token.own_line
-        #                                  or re.match("^"+rx_choice(chr_op)+"{1,2}$", token.text)):
         if token.type == 'operator' and not token.line_operator:
             loc = token.location
             for i, c in enumerate(token.text):
@@ -145,25 +156,39 @@ def adjust_locations(tokenizer):
     rightmost = 0
     for token in tokenizer:
         loc = token.location
-
-        # if token.type in ('operator',) and token.text.strip():
-        #     # token.location = Location(loc.source, (loc.start - token.space_before,
-        #     #                                        loc.end + token.space_after))
-        #     loc = Location(loc.source, (loc.start - len(token.wsb),
-        #                                 loc.end + len(token.wsa)))
-        #     token.location = loc
-
-        # print(rightmost, loc.start, loc.end, repr(getattr(token, 'text', '??')))
+        change = False
 
         if loc.start > loc.end:
             loc = Location(loc.source, (loc.start, loc.start))
+            change = True
         if rightmost > loc.start:
             loc = Location(loc.source, (rightmost, loc.end))
+            change = True
 
-        token.location = loc
+        if change:
+            token.location = loc
+            token.text = loc.get()
 
         rightmost = loc.end
         yield token
+
+def sandwich(left, right, params):
+    # TODO: change the locations of left and right
+    # or maybe not.
+    location = Location(left.location.source if left else right.location.source,
+                        (left.location.end if left else right.location.start,
+                         right.location.start if right else left.location.end))
+    is_operator = params.get("type", None) == 'operator'
+    return Token(location = location,
+                 space_before = left.space_after if left else 0,
+                 space_after = right.space_before if right else 0,
+                 line_operator = is_operator and ((not left or left.height_after)
+                                                  and (not right or right.height_before)),
+                 height_before = left.height_after if left else 0,
+                 height_after = right.height_before if right else 0,
+                 wsb = left.wsa if left else "",
+                 wsa = right.wsb if right else "",
+                 **params)
 
 @tokenizer_wrapper
 def add_indent_and_linebreaks(tokenizer):
@@ -171,20 +196,20 @@ def add_indent_and_linebreaks(tokenizer):
     indent_stack = []
     last = None
     to_sandwich = None
-    ignore_if_own_line = False
+    ignore_if_lineop = False
 
     for token in tokenizer:
         if current_indent is None:
             current_indent = len(token.wsb.split("\n")[0])
 
         if to_sandwich:
-            if (not ignore_if_own_line
-                or ((not last or last.type != "operator" or not last.own_line)
-                    and (not token or token.type != "operator" or not token.own_line))):
+            if (not ignore_if_lineop
+                or ((not last or not last.line_operator)
+                    and (not token or not token.line_operator))):
                 yield sandwich(last, token, to_sandwich)
 
         to_sandwich = None
-        ignore_if_own_line = False
+        ignore_if_lineop = False
 
         yield token
 
@@ -207,27 +232,57 @@ def add_indent_and_linebreaks(tokenizer):
                 to_sandwich = dict(type = "operator",
                                    fixity = "infix",
                                    text = "")
-                ignore_if_own_line = True
+                ignore_if_lineop = True
 
         last = token
 
 
     if to_sandwich:
-        if (not ignore_if_own_line
-            or (not last or last.type != "operator" or not last.own_line)):
+        if (not ignore_if_lineop
+            or (not last or last.type != "operator" or not last.line_operator)):
             yield sandwich(last, None, to_sandwich)
+
+
+
+def inherent_fixity(tok):
+
+    if tok.line_operator:
+        wsl = tok.height_before - 1
+        wsr = tok.height_after - 1
+    else:
+        wsl = tok.space_before if not tok.height_before else None
+        wsr = tok.space_after if not tok.height_after else None
+
+    if ((wsl is not None and wsr is not None)
+        and ((wsl == wsr == 0) or (wsl > 0 and wsr > 0))):
+        return "infix"
+    elif wsl is None or wsl > 0:
+        return "prefix"
+    elif wsr is None or wsr > 0:
+        return "suffix"
+    else:
+        raise Exception("Cannot determine fixity", tok)
+
 
 
 def tokenize(source):
     t = Tokenizer(source, dict(normal = subtok_normal))
     t = add_indent_and_linebreaks(t)
-    t = FixityDisambiguator(t)
+    t = FixityDisambiguator(t, inherent_fixity, {})
     t = split_operators(t)
     t = Alternator(t,
-                   dict(type = "void"),
-                   dict(type = "operator",
-                        fixity = "infix",
-                        text = ""))
+                   Token(location = Location(t.source, (0, 0)),
+                         fixity = "infix",
+                         wsb = "",
+                         wsa = "",
+                         space_before = 0,
+                         space_after = 0,
+                         height_before = 0,
+                         height_after = 0),
+                   lambda l, r: sandwich(l, r, dict(type = "void")),
+                   lambda l, r: sandwich(l, r, dict(type = "operator",
+                                                    fixity = "infix",
+                                                    text = "")))
     t = adjust_locations(t)
     return t 
 
@@ -259,7 +314,7 @@ def make_operators_1(tokenizer):
                 l, r = priorities[token.text]
                 second_pass = False
             else:
-                if token.own_line and not token.text in chr_op:
+                if token.line_operator:
                     if token.text:
                         priority = (token.space_before * 1e-9
                                     + (1e-10 if token.height_before <= 1 else 0))
@@ -287,7 +342,7 @@ def finalize_1(x):
         if t == 'id':
             s = ast.quaintstr(x.text)
         elif t == 'void':
-            s = ast.Void()
+            s = ast.Void(x.location)
         elif t == 'nullary':
             s = ast.Nullary(x.text)
         else:
@@ -312,10 +367,10 @@ def finalize_1(x):
         args = list(map(finalize_1, args))
 
         if op_text == ['[', ']']:
-            r = ast.InlineOp('[]', args[1], operators = op_text_and_ws)
+            r = ast.InlineOp('[]', *args, operators = op_text_and_ws)
 
         elif op_text == ['{', '}']:
-            r = ast.InlineOp('{}', args[1], operators = op_text_and_ws)
+            r = ast.InlineOp('{}', *args, operators = op_text_and_ws)
 
         elif op_text == ['<', '>']:
             r = ast.InlineOp('<>', *args, operators = op_text_and_ws)
@@ -323,6 +378,9 @@ def finalize_1(x):
         elif op_text == ['I(', ')I']:
             # TODO: fix op_text_and_ws here
             # print(ast.InlineOp.is_operator(args[0], '*'))
+            if isinstance(args[1], ast.BlockOp) and args[1].operator == 'P':
+                args = args[:1] + args[1].args + args[-1:]
+
             if isinstance(args[0], ast.InlineOp) and args[0].operator:
                 r = ast.InlineOp(args[0].operator,
                                  *(args[0][:-1]
@@ -332,7 +390,7 @@ def finalize_1(x):
             else:
                 r = ast.BlockOp('I', *args[:-1], operators = op_text_and_ws)
 
-        elif ops[0].args[1].own_line:
+        elif ops[0].args[1].line_operator:
             if ops[0].args[1].text:
                 r = ast.BlockOp(op_text[0], *args, operators = op_text_and_ws)
             elif ops[0].args[1].height_before > 1:

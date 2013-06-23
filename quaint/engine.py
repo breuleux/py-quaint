@@ -1,7 +1,8 @@
 
 import cgi
+import re
 from . import ast
-from .parser import parse
+from .parser import parse, all_op, rx_choice
 from .operparse import Source
 from collections import defaultdict
 
@@ -11,6 +12,9 @@ def simple_match(pattern, value, results = None):
 
     if results is None:
         results = {}
+
+    if isinstance(value, ast.quaintstr):
+        return None
 
     if pattern.signature() != value.signature():
         return None
@@ -29,10 +33,11 @@ def simple_match(pattern, value, results = None):
 
 
 
-class Matcher:
+class Engine:
 
     def __init__(self):
         self.ctors = defaultdict(list)
+        self.environment = {}
 
     def match(self, ptree):
         if hasattr(ptree, "signature"):
@@ -60,99 +65,14 @@ class Matcher:
         rval.ctors.update(self.ctors)
         return rval
 
+    def evaluate(self, code):
+        pass
+
     def __call__(self, ptree):
         f, args = self.match(ptree)
         return f(self, ptree, **args)
 
 
-
-def bracket_generator(engine, node, body):
-    return WrapGenerator(
-        TextGenerator(node.operators[0].replace("[", "")),
-        None,
-        TextGenerator(node.operators[1].replace("]", "")),
-        [engine(body)])
-
-def eval_generator(engine, node, body):
-    code = body.location.get()
-
-    try:
-        x = eval(code)
-    except SyntaxError:
-        exec(code)
-        x = TextGenerator("")
-    else:
-        if not isinstance(x, Generator):
-            x = TextGenerator(str(x))
-
-    return WrapGenerator(
-        TextGenerator(node.operators[0].replace("{", "")),
-        None,
-        TextGenerator(node.operators[1].replace("}", "")),
-        [x])
-
-def eval2_generator(engine, node, f, x = None, y = None):
-    f = eval(f.location.get())
-    if x is None:
-        return f(engine, node, y)
-    else:
-        return f(engine, node, x, y)
-
-def swap(engine, node, x, y):
-    return MultiGenerator([engine(y), engine(x)])
-
-def bold(engine, node, y):
-    return WrapGenerator(RawGenerator("<b>"),
-                         None,
-                         RawGenerator("</b>"),
-                         [engine(y)])
-
-
-def emphasis_generator(engine, node, em):
-    return WrapGenerator(RawGenerator("<i>"),
-                         None,
-                         RawGenerator("</i>"),
-                         [engine(em)])
-
-def header_generator(engine, node, contents):
-    return WrapGenerator(RawGenerator("<h1>"),
-                         None,
-                         RawGenerator("</h1>"),
-                         [SectionGenerator(contents.location.get(),
-                                           engine(contents))])
-
-def paragraph_generator(engine, node, contents):
-    contents = [engine(x) for x in contents]
-    contents = [x if hasattr(x, 'merge') else ParagraphGenerator([x])
-                for x in contents]
-    return AutoMergeGenerator(contents)
-
-def ulist_generator(engine, node, bullet_point):
-    return ListGenerator([engine(bullet_point)])
-
-def olist_generator(engine, node, bullet_point):
-    return ListGenerator([engine(bullet_point)], True)
-
-
-def default_void_generator(engine, node):
-    return TextGenerator("")
-
-
-def default_str_generator(engine, node):
-    return TextGenerator(node)
-
-
-def default_op_generator(engine, node):
-    args = []
-    for token, op in zip(node.args, node.operators + [None]):
-        args.append(engine(token))
-        if op is not None:
-            args.append(engine(op))
-    # print([arg.text for arg in args])
-    return WrapGenerator(RawGenerator("<span>"),
-                          None,
-                          RawGenerator("</span>"),
-                          args)
 
 
 
@@ -163,6 +83,10 @@ class TextDocument:
 
     def append(self, data):
         self.data += data
+
+
+class HTMLDocument(TextDocument):
+    pass
 
 
 class SectionsDocument:
@@ -192,6 +116,18 @@ class Generator:
         return results
 
 
+class KeywordGenerator(Generator):
+
+    def __init__(self, associations):
+        self.associations = associations
+
+    def generate_main(self, docs):
+        doc = docs['main']
+        for cls in doc.__class__.__mro__:
+            if cls in self.associations:
+                doc.append(self.associations[cls])
+                return
+        doc.append(self.associations.get(False, "?"))
 
 
 class RawGenerator(Generator):
@@ -205,8 +141,13 @@ class RawGenerator(Generator):
 
 class TextGenerator(RawGenerator):
 
+    re1 = re.compile(r"(?<=[^\\])~")
+    re2 = re.compile(r"\\("+rx_choice(all_op + [" "])+")")
+
     def generate_main(self, docs):
-        docs['main'].append(cgi.escape(self.text))
+        text = self.re1.sub("", self.text)
+        text = self.re2.sub("\\1", text)
+        docs['main'].append(cgi.escape(text))
 
 
 
@@ -323,6 +264,155 @@ class ParagraphGenerator(WrapGenerator):
 
 
 
+
+
+
+
+
+
+
+
+
+
+def bracket_generator(engine, node, body):
+    # return WrapGenerator(
+    #     TextGenerator(node.operators[0].replace("[", "")),
+    #     None,
+    #     TextGenerator(node.operators[1].replace("]", "")),
+    #     [engine(body)])
+
+    return WrapGenerator(
+        TextGenerator(node.args[0].text),
+        None,
+        TextGenerator(node.args[2].text),
+        [engine(body)])
+
+def eval_generator(engine, node, body):
+    code = body.location.get()
+
+    try:
+        x = eval(code, engine.environment)
+    except SyntaxError:
+        exec(code, engine.environment)
+        x = TextGenerator("")
+    else:
+        if not isinstance(x, Generator):
+            x = TextGenerator(str(x))
+
+    return WrapGenerator(
+        TextGenerator(node.args[0].text),
+        None,
+        TextGenerator(node.args[2].text),
+        [x])
+
+def eval2_generator(engine, node, f, x = None, y = None):
+    f = eval(f.location.get(), engine.environment)
+    if x is None:
+        return f(engine, node, y)
+    else:
+        return f(engine, node, x, y)
+
+def swap(engine, node, x, y):
+    return MultiGenerator([engine(y), engine(x)])
+
+
+
+
+def boundaries(**assoc):
+    assoc = {{'html': HTMLDocument}[k]: v
+             for k, v in assoc.items()}
+
+    starts = KeywordGenerator({k: v[0] for k, v in assoc.items()})
+    ends = KeywordGenerator({k: v[1] for k, v in assoc.items()})
+    return starts, ends
+
+def expression_wrapper(**defs):
+    a, b = boundaries(**defs)
+    def f(engine, node, expr):
+        return WrapGenerator(MultiGenerator([RawGenerator(node.args[0].text), a]),
+                             None,
+                             b, #MultiGenerator([b, RawGenerator(node.args[-1].text)]),
+                             [engine(expr)])
+    return f
+
+
+# def bold_generator(engine, node, em):
+#     return expression_wrapper(html = ["<b>", "</b>"])(engine, node, em)
+
+    # a, b = boundaries(html = ["<i>", "</i>"])
+    # return WrapGenerator(a, None, b, [engine(em)])
+
+
+# def emphasis_generator(engine, node, em):
+#     return WrapGenerator(RawGenerator(node.args[0].text + "<i>"),
+#                          None,
+#                          RawGenerator("</i>" + node.args[2].text),
+#                          [engine(em)])
+
+# def bold_generator(engine, node, em):
+#     return WrapGenerator(RawGenerator(node.args[0].text + "<b>"),
+#                          None,
+#                          RawGenerator("</b>" + node.args[2].text),
+#                          [engine(em)])
+
+bold_generator = expression_wrapper(html = ["<b>", "</b>"])
+emphasis_generator = expression_wrapper(html = ["<i>", "</i>"])
+
+def header_generator(engine, node, contents):
+    return WrapGenerator(RawGenerator("<h1>"),
+                         None,
+                         RawGenerator("</h1>"),
+                         [SectionGenerator(contents.location.get(),
+                                           engine(contents))])
+
+def header2_generator(engine, node, contents):
+    return WrapGenerator(RawGenerator("<h2>"),
+                         None,
+                         RawGenerator("</h2>"),
+                         [SectionGenerator(contents.location.get(),
+                                           engine(contents))])
+
+def paragraph_generator(engine, node, contents):
+    contents = [engine(x) for x in contents]
+    contents = [x if hasattr(x, 'merge') else ParagraphGenerator([x])
+                for x in contents]
+    return AutoMergeGenerator(contents)
+
+def ulist_generator(engine, node, bullet_point):
+    return ListGenerator([engine(bullet_point)])
+
+def olist_generator(engine, node, bullet_point):
+    return ListGenerator([engine(bullet_point)], True)
+
+
+def default_void_generator(engine, node):
+    return TextGenerator(node.text)
+
+
+def default_str_generator(engine, node):
+    return TextGenerator(node)
+
+
+def default_op_generator(engine, node):
+    args = []
+    for token, op in zip(node.args, node.operators + [None]):
+        args.append(engine(token))
+        if op is not None:
+            args.append(engine(op))
+    # print([arg.text for arg in args])
+    return WrapGenerator(RawGenerator("<span>"),
+                         None,
+                         RawGenerator("</span>"),
+                         args)
+
+
+
+
+
+
+
+
+
 def prepare_documents(root, initial_documents):
     documents = set()
     deps = defaultdict(set)
@@ -377,6 +467,13 @@ def evaluate(x):
         else:
             return None
 
+    def woop2(x):
+        # print(x, isinstance(x, ast.BlockOp), set(x.operator))
+        if isinstance(x, ast.BlockOp) and set(x.operator) == {'-'}:
+            return {'contents': x.args[0]}
+        else:
+            return None
+
     def woop_par(x):
         if isinstance(x, ast.BlockOp) and x.operator == 'P':
             return {'contents': x.args}
@@ -395,7 +492,7 @@ def evaluate(x):
     #     print(3, ptree)
     #     return 123456
 
-    m = Matcher()
+    m = Engine()
     m.register(lambda x: ({} if isinstance(x, ast.Void) else None),
                default_void_generator)
     m.register(lambda x: ({} if isinstance(x, str) else None),
@@ -403,10 +500,12 @@ def evaluate(x):
     m.register(lambda x: ({} if isinstance(x, ast.Op) else None),
                default_op_generator)
     m.register(woop, header_generator)
+    m.register(woop2, header2_generator)
     # m.register(woop_par, paragraphs_generator)
 
-    m.register("*em*", emphasis_generator)
-    m.register("* bullet_point", ulist_generator)
+    m.register("*expr", emphasis_generator)
+    m.register("**expr", bold_generator)
+    m.register("- bullet_point", ulist_generator)
     m.register("# bullet_point", olist_generator)
     m.register("[body]", bracket_generator)
     m.register("{body}", eval_generator)
@@ -416,17 +515,19 @@ def evaluate(x):
 
     m.register(woop_par, paragraph_generator)
 
+    m.environment['swap'] = swap
+
     # e.matcher.register("a - b", woop2)
     # e.matcher.register("*/a - b*", woop2)
     # e.matcher.register(lambda x: {}, woop3)
 
     # return m(x).generate_html()
 
-    documents = {'main': TextDocument(),
+    documents = {'main': HTMLDocument(),
                  'sections': SectionsDocument()}
     documents = execute_documents(m(x), documents)
 
-    rval = [d for d in documents if isinstance(d, TextDocument)]
+    rval = [d for d in documents if isinstance(d, HTMLDocument)]
 
     return rval[0].data
 

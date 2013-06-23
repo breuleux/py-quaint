@@ -14,6 +14,7 @@ Options:
 """
 
 from docopt import docopt
+from timeit import timeit
 
 from descr import boxy_terminus, HTMLRuleBuilder as RB, descr
 from descr.util import Table, Group
@@ -68,25 +69,31 @@ def needs_source(f):
 
 @needs_source
 def x_tok(s, path):
+    # print(timeit(lambda: tokenize(Source(s, url = path)), number = 100))
+    results = tokenize(Source(s, url = path))
     rules = RB()
     rules.hide(".source_header")
     rules.mclasses(".table > * > .{@str}", {"scalar", "@str"})
     pr = boxy_terminus(rules = rules)
     things = []
-    for entry in tokenize(Source(s, url = path)):
+    for entry in results:
         things.append([str(entry), Group([entry.location])])
     pr(Table(things))
 
 @needs_source
 def x_ast(s, path):
+    # print(timeit(lambda: parse(Source(s, url = path)), number = 100))
     result = parse(Source(s, url = path))
     pr = boxy_terminus()
     pr((result), rules = rules, descr = ugdescr)
 
 @needs_source
 def x_eval(s, path):
-    result = parse(Source(s, url = path))
-    print("\x1B[?0;7y:h " + evaluate(result) + "\a")
+    # print("ast", timeit(lambda: parse(Source(s, url = path)), number = 1) * 1000)
+    ast = parse(Source(s, url = path))
+    # print("eval", timeit(lambda: evaluate(ast), number = 1) * 1000)
+    result = evaluate(ast)
+    print("\x1B[?0;7y:h " + result + "\a")
 
 
 if __name__ == '__main__':

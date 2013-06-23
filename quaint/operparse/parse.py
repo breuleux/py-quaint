@@ -119,9 +119,9 @@ def operator_parse(tokenizer, order, finalize):
                 next_id = next(tokenizer)
                 try:
                     righter_op = next(tokenizer)
-                    return helper(right_op, next_id, righter_op, new_make_left)
+                    return lambda: helper(right_op, next_id, righter_op, new_make_left)
                 except StopIteration:
-                    return new_make_left(next_id)
+                    return lambda: new_make_left(next_id)
 
             elif o == 'a':
                 def new_make_left(*right, aggregate = []):
@@ -130,9 +130,9 @@ def operator_parse(tokenizer, order, finalize):
                 next_id = next(tokenizer)
                 try:
                     righter_op = next(tokenizer)
-                    return helper(right_op, next_id, righter_op, new_make_left)
+                    return lambda: helper(right_op, next_id, righter_op, new_make_left)
                 except StopIteration:
-                    return new_make_left(next_id)
+                    return lambda: new_make_left(next_id)
 
             else:
                 raise exc.RichException['unknown_order'](
@@ -143,7 +143,10 @@ def operator_parse(tokenizer, order, finalize):
 
     id1 = next(tokenizer)
     op1 = next(tokenizer)
-    results = helper(None, id1, op1, lambda right: [None, right, None])
+
+    results = lambda: helper(None, id1, op1, lambda right: [None, right, None])
+    while callable(results):
+        results = results() #helper(None, id1, op1, lambda right: [None, right, None])
 
     while results[2] is not None:
         results = results[2](results[1])
