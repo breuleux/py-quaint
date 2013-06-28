@@ -44,8 +44,8 @@ def default_bindings(engine):
         ("maybe x <f> maybe y", 'feval'),
 
         # Emphasis
-        ('_ em', 'em'),
-        ('__ em', 'strong'),
+        ('_ expr', 'em'),
+        ('__ expr', 'strong'),
 
         # Code
         ('maybe lang ` code', 'code'),

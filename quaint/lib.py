@@ -2,7 +2,6 @@
 
 from . import ast, engine as mod_engine
 from .engine import (
-    strip,
     dedent,
     collapse,
     codehl,
@@ -34,6 +33,39 @@ def source(node):
     return (node.whitespace_left
             + node.raw()
             + node.whitespace_right)
+
+class FromArg:
+    def __init__(self, argname, f = None):
+        self.argname = argname
+        self.f = f
+
+def wrapper(tag = "span", **attributes):
+
+    @wrap_whitespace
+    def wrap(engine, node, lhs = None, expr = None, **args):
+        opening_tag = "<" + tag
+        for attr, value in attributes.items():
+            if attr == 'classes': attr = 'class'
+            if isinstance(value, (list, set, tuple)):
+                value = " ".join(value)
+            elif isinstance(value, FromArg):
+                argname, f = value.argname, value.f
+                value = args[argname]
+                if f:
+                    value = f(engine, value)
+                else:
+                    value = value.raw()
+            opening_tag += ' %s="%s"' % (attr, value)
+        opening_tag += ">"
+        return Gen(engine(lhs) if lhs else Raw(""),
+                   Raw(opening_tag),
+                   engine(expr),
+                   Raw("</%s>" % tag))
+
+    if not attributes:
+        wrap.__name__ = tag
+
+    return wrap
 
 
 
@@ -75,70 +107,13 @@ def blocks(engine, node, pars):
                 for x in contents]
     return AutoMerge(contents)
 
+@wrap_whitespace
 def bracket(engine, node, body):
-    return Gen(engine(node.args[0]),
-               engine(body),
-               engine(node.args[2]))
+    return engine(body)
 
 
-class FromArg:
-    def __init__(self, argname, f = None):
-        self.argname = argname
-        self.f = f
-
-def wrapper(tag = "span", **attributes):
-
-    @wrap_whitespace
-    def wrap(engine, node, lhs = None, expr = None, **args):
-        opening_tag = "<" + tag
-        for attr, value in attributes.items():
-            if attr == 'classes': attr = 'class'
-            if isinstance(value, (list, set, tuple)):
-                value = " ".join(value)
-            elif isinstance(value, FromArg):
-                argname, f = value.argname, value.f
-                value = args[argname]
-                if f:
-                    value = f(engine, value)
-                else:
-                    value = strip(value.raw())
-            opening_tag += ' %s="%s"' % (attr, value)
-        opening_tag += ">"
-        return Gen(engine(lhs) if lhs else Raw(""),
-                   Raw(opening_tag),
-                   engine(expr),
-                   Raw("</%s>" % tag))
-    return wrap
-
-
-
-# def wrapper(tag = "span", classes = []):
-#     if isinstance(classes, str):
-#         classes = [classes]
-#     def wrap(engine, node, lhs = None, expr = None):
-#         if classes:
-#             cls = ' class="%s"' % " ".join(classes)
-#         else:
-#             cls = ''
-#         return Gen(engine(lhs) if lhs else Raw(""),
-#                    Raw("<%s%s>" % (tag, cls)),
-#                    engine(expr),
-#                    Raw("</%s>" % tag))
-#     return wrap
-
-# def classes(*classes):
-#     return wrapper(
-
-
-@wrap_whitespace
-def em(engine, node, em):
-    # emphasis (italics)
-    return Gen(Raw("<em>"), engine(em), Raw("</em>"))
-
-@wrap_whitespace
-def strong(engine, node, em):
-    # strong emphasis (bold)
-    return Gen(Raw("<strong>"), engine(em), Raw("</strong>"))
+em = wrapper("em")
+strong = wrapper("strong")
 
 
 
@@ -155,14 +130,12 @@ def extract_and_codehl(lang, code, do_dedent = True):
     code = source(code)
     if do_dedent:
         code = dedent(code)
-    print(repr(code), repr(codehl(lang, code)))
     return codehl(lang, code)
 
 
 @wrap_whitespace
 def code(engine, node, lang, code):
     # inline code snippets
-    # wsl, wsr, code = mod_engine.extract_and_codehl(engine, lang, code, True)
     code = extract_and_codehl(lang, code, False)
     return Gen(Raw('<span class="highlight"><code>'),
                # Note: pygments' HTMLFormatter puts a line break at
@@ -174,7 +147,6 @@ def code(engine, node, lang, code):
 
 def code_block(engine, node, lang, code):
     # blocks of code
-    # wsl, wsr, code = mod_engine.extract_and_codehl(engine, lang, code, False)
     return Gen(Raw('<div class="highlight"><pre>'),
                Raw(extract_and_codehl(lang, code, True)),
                Raw('</pre></div>'))
@@ -210,9 +182,12 @@ def olist(engine, node, item):
     return List(engine(item), ordered = True)
 
 
+@wrap_whitespace
+def eval(engine, node, env = None, body = None):
+    if body is None:
+        body = env
 
-def eval(engine, node, body):
-    code = dedent(body.raw())
+    code = dedent(source(body))
 
     try:
         x = pyeval(code, engine.environment)
@@ -225,17 +200,13 @@ def eval(engine, node, body):
         elif not isinstance(x, Generator):
             x = Text(str(x))
 
-    if node:
-        return Gen(engine(node.args[0]), x, engine(node.args[2]))
-    else:
-        return x
+    return x
 
+@wrap_whitespace
 def feval(engine, node, f, x, y):
-    code = dedent(f.raw())
+    code = dedent(source(f))
     f = pyeval(code, engine.environment)
     return f(engine, node, x, y)
-
-
 
 
 
@@ -243,8 +214,7 @@ def css(engine, node, _, x):
     return Gen(Raw("<style>"), Raw(x.raw()), Raw("</style>"))
 
 def setvar(engine, node, name, body):
-    name = strip(name.raw())
+    name = name.raw()
     engine.environment[name] = body
     return Raw("")
-
 

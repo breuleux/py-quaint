@@ -80,7 +80,6 @@ def m_id(source, m, wsb, wsa):
 
     d = {"type": "id",
          "text": text,
-         # "own_line": False,
          "line_operator": False}
     d.update(analyze_whitespace(wsb, wsa))
 
@@ -101,7 +100,6 @@ def m_operator(fixity):
         token.line_operator = ((token.height_before > 0)
                                and (token.height_after > 0)
                                and (len(text) >= 3))
-        # token.own_line = token.line_operator
 
         return token, m.regs[0][1]
 
@@ -136,27 +134,6 @@ subtok_normal = SubTokenizer(
     standard_matchers,
     whitespace_re)
 
-
-# @tokenizer_wrapper
-# def split_operators(tokenizer):
-#     for token in tokenizer:
-#         if token.type == 'operator' and not token.line_operator:
-#             loc = token.location
-#             for i, c in enumerate(token.text):
-#                 t = Token(**token.__dict__)
-#                 t.text = c
-#                 t.location = Location(loc.source, (loc.start+i, loc.start+i+1))
-#                 if c in [',', ';', '<', '>']:
-#                     t.fixity = 'infix'
-#                 if i > 0:
-#                     t.space_before = t.height_before = 0
-#                     t.wsb = ""
-#                 if i < len(token.text) -  1:
-#                     t.space_after = t.height_after = 0
-#                     t.wsa = ""
-#                 yield t
-#         else:
-#             yield token
 
 @tokenizer_wrapper
 def adjust_locations(tokenizer):
@@ -247,59 +224,6 @@ def add_indent_and_linebreaks(tokenizer):
         if (not ignore_if_lineop
             or (not last or last.type != "operator" or not last.line_operator)):
             yield sandwich(last, None, insert)
-
-
-# @tokenizer_wrapper
-# def add_indent_and_linebreaks(tokenizer):
-#     current_indent = None
-#     indent_stack = []
-#     last = None
-#     to_sandwich = None
-#     ignore_if_lineop = False
-
-#     for token in tokenizer:
-#         if current_indent is None:
-#             current_indent = len(token.wsb.split("\n")[0])
-
-#         if to_sandwich:
-#             if (not ignore_if_lineop
-#                 or ((not last or not last.line_operator)
-#                     and (not token or not token.line_operator))):
-#                 yield sandwich(last, token, to_sandwich)
-
-#         to_sandwich = None
-#         ignore_if_lineop = False
-
-#         yield token
-
-#         if token.height_after > 0:
-#             indent = len(token.wsa.split("\n")[-1])
-#             if indent > current_indent:
-#                 indent_stack.append(current_indent)
-#                 current_indent = indent
-#                 to_sandwich = dict(type = "operator",
-#                                    fixity = "infix",
-#                                    text = "I(")
-#             elif (indent < current_indent
-#                   and indent_stack
-#                   and indent <= indent_stack[-1]):
-#                 current_indent = indent_stack.pop()
-#                 to_sandwich = dict(type = "operator",
-#                                    fixity = "suffix",
-#                                    text = ")I")
-#             else:
-#                 to_sandwich = dict(type = "operator",
-#                                    fixity = "infix",
-#                                    text = "")
-#                 ignore_if_lineop = True
-
-#         last = token
-
-
-#     if to_sandwich:
-#         if (not ignore_if_lineop
-#             or (not last or last.type != "operator" or not last.line_operator)):
-#             yield sandwich(last, None, to_sandwich)
 
 
 def is_wide(tok):
@@ -460,57 +384,7 @@ def make_operators(tokenizer):
             yield Operator(l, r, token, location = loc)
 
 
-
-
-
-
-
-# def make_operators_1(tokenizer):
-
-#     p_immediate = (1000, 'l', None)
-
-#     priorities = {
-#         'I(': ((15, 'l', None), (0, 'l', [')I'])),
-#         ')I': ((0, 'l', ['[']), p_immediate),
-#         '[': (p_immediate, (0, 'l', [']'])),
-#         ']': ((0, 'l', ['[']), p_immediate),
-#         '{': (p_immediate, (0, 'l', ['}'])),
-#         '}': ((0, 'l', ['{']), p_immediate)
-#         }
-
-#     for token in tokenizer:
-#         if not isinstance(token, Token):
-#             yield token
-#             continue
-#         loc = token.location
-#         if token.type == 'operator':
-
-#             if token.text in priorities:
-#                 l, r = priorities[token.text]
-#                 second_pass = False
-#             else:
-#                 if token.line_operator:
-#                     if token.text:
-#                         priority = (token.space_before * 1e-9
-#                                     + (1e-10 if token.height_before <= 1 else 0))
-#                     else:
-#                         priority = (token.space_after * 1e-9
-#                                     + (1e-10 if token.height_before <= 1 else 0))
-#                     p = (10 + priority, 'l', True)
-#                 else:
-#                     p = (100, 'l', True)
-#                 l, r = p, p
-#                 second_pass = True
-
-#             l = (token.text,) + l
-#             r = (token.text,) + r
-
-#             yield Operator(l, r, second_pass, token, location = loc)
-#         else:
-#             yield token
-
-
-def finalize_1(x):
+def finalize(x):
 
     if isinstance(x, Token):
         t = x.type
@@ -532,10 +406,6 @@ def finalize_1(x):
     if not isinstance(ops, (list, tuple)):
         ops = [ops]
 
-    # if ops[0].args[0]:
-    #     new_tokens = list(make_operators_2(ops, args))
-    #     return operator_parse(iter(new_tokens), order, finalize_1)
-
     # else:
     if True:
 
@@ -543,7 +413,7 @@ def finalize_1(x):
         wide = any(is_wide(op.args[0]) for op in ops)
 
         # op_text_and_ws = [op.args[0].location.get() for op in ops]
-        args = list(map(finalize_1, args))
+        args = list(map(finalize, args))
 
         if op_text == ['[', ']']:
             r = ast.InlineOp('[]', *args, wide = wide)
@@ -593,79 +463,6 @@ def finalize_1(x):
 
 
 
-
-
-def match_for(c):
-    if c == '{': return ['}']
-    elif c == '<': return ['>']
-    else: return [c]
-
-
-
-# def make_operators_2(operators, tokens):
-
-#     brackets = []
-#     new_operators = []
-#     new_tokens = []
-
-#     def match(bi, i, j):
-#         oi = new_operators[i]
-#         oj = new_operators[j]
-#         toki = oi.args[1]
-#         tokj = oj.args[1]
-#         if tokj.text in match_for(toki.text):
-#             if tokj.fixity == 'infix':
-#                 brackets[bi:] = [j]
-#             else:
-#                 brackets[bi:] = []
-#             oi.right_facing = (toki.text, 0, 'l', [tokj.text])
-#             oj.left_facing = (tokj.text, 0, 'l', [toki.text])
-#             return True
-#         else:
-#             return False
-
-#     for i, (op, node) in enumerate(zip(operators, tokens)):
-
-#         token = op.args[1]
-#         w = token.space_before or token.space_after
-#         f = token.fixity
-#         if token.text:
-#             p0 = (token.text, 1000, 'l', None)
-#             ps = (token.text, 300, 'r', match_for(token.text))
-#             pw = (token.text, 100, 'r', match_for(token.text))
-
-#             if f == 'prefix':
-#                 l, r = p0, pw if token.space_after else ps
-#                 brackets.append(i)
-#             elif f == 'suffix':
-#                 if i == 0:
-#                     # suffix operators become infix when they
-#                     # are the first operator, e.g.:
-#                     # 1# first bullet point
-#                     l, r = pw if token.space_before else ps, pw
-#                 else:
-#                     l, r = pw if token.space_before else ps, p0
-#             elif f == 'infix':
-#                 if token.text == '<':
-#                     brackets.append(i)
-#                 p = pw if token.space_before or token.space_after else ps
-#                 l, r = p, p
-#         else:
-#             l = ('', 200 if w else 400, 'a', [''])
-#             r = l
-#         new_operators.append(Operator(l, r, False, token, location = token.location))
-#         if f in ('infix', 'suffix'):
-#             for bi in range(len(brackets) - 1, -1, -1):
-#                 if match(bi, brackets[bi], i):
-#                     break
-
-#     yield tokens[0]
-#     for op, token in zip(new_operators, tokens[1:]):
-#         yield op
-#         yield token
-
-
-
 def order(left, right):
 
     t1, p1, a1, m1 = left
@@ -686,48 +483,9 @@ def parse(source):
     t = tokenize(source)
     # t = list(make_operators_1(t))
     t = list(make_operators(t))
-    p = operator_parse(iter(t), order, finalize_1)
+    p = operator_parse(iter(t), order, finalize)
     p = fix_whitespace(p, True, True)[0]
     return p
-
-# class quaintstr(str):
-#     def __init__(self, s, location = None):
-#         super().__init__(s)
-#         self.location = location
-
-# class ASTNode:
-#     def __init__(self, name, *args, location = None):
-#         self.name = name
-#         self.args = list(args)
-#         if not location:
-#             for arg in args:
-#                 if hasattr(arg, 'location'):
-#                     if location is None:
-#                         location = arg.location
-#                     else:
-#                         location += arg.location
-#         self.location = location
-#     def __getitem__(self, i):
-#         return self.args[i]
-#     def __setitem__(self, i, value):
-#         self.args[i] = value
-#     def __str__(self):
-#         return '#{0.name}{0.args!r}'.format(self)
-#     def __repr__(self):
-#         return str(self)
-#     def __descr__(self, descr):
-#         name = self.name
-#         return [(({"@ASTNode", "+"+name, "object"},)
-#                  + tuple(descr(x) for x in self.args))]
-
-
-# class ASTBuilder:
-#     def __getattr__(self, name):
-#         def build(*args, location = None):
-#             return ASTNode(name, *args, location = location)
-#         return build
-
-# ast = ASTBuilder()
 
 
 

@@ -119,68 +119,6 @@ def match_pattern(pattern, value):
         return pattern(value)
 
 
-# class PatternBank:
-
-#     def __init__(self):
-#         self.patterns = {}
-
-#     # def add(self, pattern, rule):
-
-#     #     if isinstance(pattern, type):
-#     #         self.patterns[pattern] = ({}, rule)
-
-#     #     if isinstance(pattern, ast.InlineOp):
-#     #         if 
-
-#     #         self.patterns[("I", ast.text)]
-
-#     def match(self, value):
-
-#         keys = value.__class__.__mro__
-#         if isinstance(value, ast.Op):
-#             keys = (value.text,) + keys
-
-#         for key in keys:
-#             if key not in self.patterns:
-#                 continue
-#             candidates = self.patterns[key]
-#             for candidate in candidates:
-#                 if isinstance(candidate, str):
-#                     return {candidate: value}
-#                 elif isinstance(candidate, tuple):
-            
-
-
-# ['void v _ em']
-
-
-
-
-def simple_match(pattern, value, results = None):
-
-    if results is None:
-        results = {}
-
-    if isinstance(value, ast.quaintstr):
-        return None
-
-    if pattern.signature() != value.signature():
-        return None
-
-    if isinstance(pattern, ast.Op):
-        for p, v in zip(pattern.args, value.args):
-            if isinstance(p, str):
-                results[p.strip()] = v
-            else:
-                if simple_match(p, v, results) is None:
-                    return None
-    else:
-        return {}
-
-    return results
-
-
-
 class Engine:
 
     def __init__(self):
@@ -381,17 +319,6 @@ class RedirectGenerator(Generator):
         return {'main': 'redirect'}
 
 
-# class Doubler(RedirectGenerator):
-
-#     def generate_main(self, docs):
-#         print("what", docs['redirect'].data)
-#         docs['main'].append(docs['redirect'].data)
-#         docs['main'].append(docs['redirect'].data)
-
-# def doubler_generator(engine, node, x):
-#     return Doubler(engine(x))
-
-
 class SectionGenerator(RedirectGenerator):
 
     def __init__(self, section_name, contents):
@@ -409,7 +336,6 @@ class SectionGenerator(RedirectGenerator):
         docs['main'].append(docs['redirect'].data)
 
 
-
 class TOCGenerator(Generator):
 
     def deps(self):
@@ -421,53 +347,6 @@ class TOCGenerator(Generator):
         for name, section in sections.sections:
             main.append(section.data)
             main.append("<br/>")
-
-# class SectionGenerator(ProxyGenerator):
-
-#     def __init__(self, section_name, contents):
-#         self.section_name = section_name
-#         super().__init__(contents)
-
-#     def generate_sections(self, docs):
-#         docs['sections'].add(self.section_name, self.element)
-
-
-
-# class TOCGenerator(Generator):
-
-#     def deps(self):
-#         return {'main': 'sections'}
-
-#     def generate_main(self, docs):
-#         main = docs['main']
-#         sections = docs['sections']
-#         for name, section in sections.sections:
-#             main.append(name)
-#             main.append("<br/>")
-
-
-# toc_generator = TOCGenerator()
-
-
-
-# class WrapGenerator(MultiGenerator):
-
-#     def __init__(self, prefix, join, suffix, children):
-#         self.children = children
-#         real_children = []
-#         if prefix:
-#             real_children.append(prefix)
-#         if join and children:
-#             real_children.append(children[0])
-#             for child in children[1:]:
-#                 real_children.append(join)
-#                 real_children.append(child)
-#         else:
-#             real_children += children
-#         if suffix:
-#             real_children.append(suffix)
-#         self._real_children = real_children
-
 
 
 class WrapGenerator(PartsGenerator):
@@ -508,9 +387,6 @@ class AutoMergeGenerator(PartsGenerator):
 
     def parts(self):
         return self.children
-
-
-
 
 
 class ListGenerator(PartsGenerator):
@@ -571,7 +447,7 @@ class ParagraphGenerator(WrapGenerator):
     def __init__(self, children, can_merge = False):
         self.can_merge = can_merge
         super().__init__(RawGenerator("<p>"),
-                         TextGenerator(""),
+                         TextGenerator("\n"),
                          RawGenerator("</p>"),
                          children)
 
@@ -582,223 +458,25 @@ class ParagraphGenerator(WrapGenerator):
             return None
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# def bracket_generator(engine, node, body):
-#     return MultiGenerator(engine(node.args[0]),
-#                           engine(body),
-#                           engine(node.args[2]))
-
 def dedent(code):
     lines = code.split("\n")
     lines2 = [line for line in lines if line]
     nspaces = len(lines2[0]) - len(lines2[0].lstrip())
     return "\n".join([line[nspaces:] for line in lines])
 
-# def eval_generator(engine, node, body):
-#     code = dedent(body.location.get())
-
-#     try:
-#         x = eval(code, engine.environment)
-#     except SyntaxError:
-#         exec(code, engine.environment)
-#         x = TextGenerator("")
-#     else:
-#         if isinstance(x, (ast.ASTNode, ast.quaintstr)):
-#             x = engine(x)
-#         elif not isinstance(x, Generator):
-#             x = TextGenerator(str(x))
-
-#     return MultiGenerator(engine(node.args[0]),
-#                           x,
-#                           engine(node.args[2]))
-
-# def eval2_generator(engine, node, f, x, y):
-#     code = dedent(f.location.get())
-#     f = eval(code, engine.environment)
-#     return f(engine, node, x, y)
-
-# def swap(engine, node, x, y):
-#     return MultiGenerator(engine(y), engine(x))
-
-# def css(engine, node, _, x):
-#     return MultiGenerator(RawGenerator("<style>"),
-#                           RawGenerator(x.raw()),
-#                           RawGenerator("</style>"))
-
-# def setvar_generator(engine, node, name, body):
-#     name = strip(name.raw())
-#     engine.environment[name] = body
-#     return RawGenerator("")
-
-
-
-
-# def boundaries(**assoc):
-#     assoc = {{'html': HTMLDocument}[k]: v
-#              for k, v in assoc.items()}
-
-#     starts = KeywordGenerator({k: v[0] for k, v in assoc.items()})
-#     ends = KeywordGenerator({k: v[1] for k, v in assoc.items()})
-#     return starts, ends
-
-# def expression_wrapper(**defs):
-#     a, b = boundaries(**defs)
-#     def f(engine, node, expr):
-#         return WrapGenerator(MultiGenerator(RawGenerator(node.args[0].text), a),
-#                              None,
-#                              b, #MultiGenerator([b, RawGenerator(node.args[-1].text)]),
-#                              [engine(expr)])
-#     return f
-
-
-# # def bold_generator(engine, node, em):
-# #     return expression_wrapper(html = ["<b>", "</b>"])(engine, node, em)
-
-#     # a, b = boundaries(html = ["<i>", "</i>"])
-#     # return WrapGenerator(a, None, b, [engine(em)])
-
-
-# def emphasis_generator(engine, node, v, em):
-#     return MultiGenerator(engine(v),
-#                           WrapGenerator(RawGenerator("<i>"),
-#                                         None,
-#                                         RawGenerator("</i>"),
-#                                         [engine(em)]))
-
-# def bold_generator(engine, node, v, em):
-#     return MultiGenerator(engine(v),
-#                           WrapGenerator(RawGenerator("<b>"),
-#                                         None,
-#                                         RawGenerator("</b>"),
-#                                         [engine(em)]))
-
-# # bold_generator = expression_wrapper(html = ["<b>", "</b>"])
-# # emphasis_generator = expression_wrapper(html = ["<i>", "</i>"])
-
-# def header_generator(engine, node):
-#     contents, _ = node.args
-#     return WrapGenerator(RawGenerator("<h1>"),
-#                          None,
-#                          RawGenerator("</h1>"),
-#                          [SectionGenerator(contents.location.get(),
-#                                            engine(contents))])
-
-# def header2_generator(engine, node):
-#     contents, _ = node.args
-#     return WrapGenerator(RawGenerator("<h2>"),
-#                          None,
-#                          RawGenerator("</h2>"),
-#                          [SectionGenerator(contents.location.get(),
-#                                            engine(contents))])
 
 def codehl(lang, code):
-
     if lang == 'auto':
         lexer = pygments.lexers.guess_lexer(code)
-
     else:
         try:
             lexer = pygments.lexers.get_lexer_by_name(lang)
         except pygments.util.ClassNotFound:
             lexer = pygments.lexers.TextLexer()
-
     hlcode = pygments.highlight(code, lexer,
                                 pygments.formatters.HtmlFormatter(nowrap = True))
-
     return hlcode
 
-
-strip_re_begin = re.compile("^({ws}*)".format(ws = "[ \n~]"))
-strip_re_end = re.compile("({ws})*$".format(ws = "[ \n~]"))
-def strip_and_ws(text):
-    mb = strip_re_begin.search(text)
-    me = strip_re_end.search(text)
-    b = mb.regs[0][1]
-    e = me.regs[0][0]
-    # print(repr(text), mb.regs, me.regs)
-    return text[:b], text[b:e], text[e:]
-
-# strip_re = re.compile("^{ws}+|{ws}+$".format(ws = "[ \n~]"))
-def strip(w):
-    a, b, c = strip_and_ws(w)
-    return b
-    # print(repr(w))
-    # print(repr(strip_re.sub("", w)))
-    # return strip_re.sub("", w)
-
-def extract_and_codehl(engine, lang, code, do_strip = False):
-
-    if isinstance(code, ast.InlineOp) and code.operator == '[]':
-        wsl, code, wsr = code.args
-        do_strip = False
-    else:
-        wsl, code, wsr = "", code, ""
-    wsl = engine(wsl)
-    wsr = engine(wsr)
-
-    if isinstance(lang, ast.Void):
-        lang = "text"
-    else:
-        lang = lang.raw().strip().lower()
-
-    if do_strip:
-        _, code, wsr2 = strip_and_ws(code.raw())
-        wsr = MultiGenerator(wsr, TextGenerator(wsr2))
-    else:
-        code = dedent(code.raw())
-    return wsl, wsr, codehl(lang, code)
-
-
-# def code_generator(engine, node, lang, expr):
-#     wsl, wsr, code = extract_and_codehl(engine, lang, expr, True)
-#     return WrapGenerator(RawGenerator('<span class="highlight"><code>'),
-#                          None,
-#                          RawGenerator('</code></span>'),
-#                          # Note: code.strip() removes the line break pygments'
-#                          # HTMLFormatter puts at the end of the generated code.
-#                          # That line break produces whitespace we might not want.
-#                          [WSGenerator(lang), wsl, RawGenerator(code.strip()), wsr])
-
-# def code_block_generator(engine, node, lang, body):
-#     wsl, wsr, code = extract_and_codehl(engine, lang, body, False)
-#     return WrapGenerator(RawGenerator('<div class="highlight"><pre>'),
-#                          None,
-#                          RawGenerator('</pre></div>'),
-#                          [RawGenerator(code)])
-
-# def paragraph_generator(engine, node, par):
-#     contents = par.args
-#     contents = [engine(x) for x in contents]
-#     contents = [x if hasattr(x, 'merge') else ParagraphGenerator([x], True)
-#                 for x in contents]
-#     return AutoMergeGenerator(contents)
-
-# def blocks_generator(engine, node, pars):
-#     contents = pars.args
-#     contents = [engine(x) for x in contents]
-#     contents = [x if hasattr(x, 'merge') else ParagraphGenerator([x])
-#                 for x in contents]
-#     return AutoMergeGenerator(contents)
-
-# def get_cells(engine, row, op):
-#     cells = []
-#     while isinstance(row, ast.InlineOp) and row.operator == op:
-#         cells.append(engine(row.args[0]))
-#         row = row.args[1]
-#     if not isinstance(row, ast.Void):
-#         cells.append(engine(row))
-#     return cells
 
 def collapse(expr, op):
     results = []
@@ -808,62 +486,6 @@ def collapse(expr, op):
     if not isinstance(expr, ast.Void):
         results.append(expr)
     return results
-
-# def table_row_generator(engine, node, row):
-#     return TableGenerator(get_cells(engine, row, '|'))
-
-# def table_header_generator(engine, node, row):
-#     return TableGenerator(TableHeader(*get_cells(engine, row, '+')))
-
-# def ulist_generator(engine, node, bulletpoint):
-#     return ListGenerator(engine(bulletpoint))
-
-# def olist_generator(engine, node, bulletpoint):
-#     return ListGenerator(engine(bulletpoint), ordered = True)
-
-
-# def text_generator(engine, node):
-#     if not isinstance(node, str):
-#         node = node.raw()
-#     return TextGenerator(node)
-
-# def raw_generator(engine, node):
-#     if not isinstance(node, str):
-#         node = node.raw()
-#     return RawGenerator(node)
-
-
-# def indent_generator(engine, node, i):
-#     contents = i.args
-#     return WrapGenerator(RawGenerator("<span>"),
-#                          None,
-#                          RawGenerator("</span>"),
-#                          list(map(engine, contents)))
-
-
-# def default_op_generator(engine, node):
-#     # args = []
-#     # for token, op in zip(node.args, node.operators + [None]):
-#     #     args.append(engine(token))
-#     #     if op is not None:
-#     #         args.append(engine(op))
-#     # print([arg.text for arg in args])
-
-#     args = [engine(node.args[0])]
-#     for token in node.args[1:]:
-#         args.append(engine(node.operator))
-#         args.append(engine(token))
-#     return WrapGenerator(RawGenerator("<span>"),
-#                          None,
-#                          RawGenerator("</span>"),
-#                          args)
-
-
-
-
-
-
-
 
 
 def prepare_documents(root, initial_documents):
@@ -894,182 +516,6 @@ def execute_documents(root, initial_documents):
         for generator, docmap in generators:
             generator(docmap)
     return [d for d, _ in documents]
-
-
-# class DefaultGenerator(Generator):
-
-#     def generate(self, documents):
-#         for child in self.
-
-
-
-
-
-
-
-# def eng0():
-
-#     def sequence_of(c, cls = ast.Op):
-#         c = set(c)
-#         def test(x):
-#             if isinstance(x, cls) and set(x.operator) == c:
-#                 return {}
-#             else:
-#                 return None
-#         return test
-
-#     m = Engine()
-
-#     m.register(ast.Void, text_generator)
-#     m.register(ast.Nullary, text_generator)
-#     m.register(str, text_generator)
-#     m.register(ast.Op, default_op_generator)
-
-#     m.register(sequence_of('=', ast.BlockOp), header_generator, "=")
-#     m.register(sequence_of('-', ast.BlockOp), header2_generator, "-")
-
-#     m.register("void v _ em", emphasis_generator)
-#     m.register("void v __ em", bold_generator)
-#     m.register("maybe lang ` expr", code_generator)
-#     m.register("maybe lang % body", code_block_generator)
-
-#     m.register(("I", "i"), indent_generator)
-#     m.register(("P", "par"), paragraph_generator)
-#     m.register(("B", "pars"), blocks_generator)
-
-#     m.register(('[]', [ast.Void, 'body', ast.Void]), bracket_generator)
-#     m.register("{body}", eval_generator)
-#     m.register("maybe x <f> maybe y", eval2_generator)
-
-#     m.register("* bulletpoint", ulist_generator)
-#     m.register("# bulletpoint", olist_generator)
-#     m.register("| row", table_row_generator)
-#     m.register("+ row", table_header_generator)
-
-#     m.register("name <- body", setvar_generator)
-
-#     m.environment['engine'] = m
-#     m.environment['swap'] = swap
-#     # m.environment['setvar'] = setvar
-#     m.environment['css'] = css
-#     m.environment['table'] = TableGenerator
-
-#     m.environment['gen'] = MultiGenerator
-#     m.environment['raw'] = RawGenerator
-#     m.environment['text'] = TextGenerator
-#     m.environment['toc'] = toc_generator
-
-#     return m
-
-
-def evaluate(x, engine):
-
-    # for k, v in m.ctors.items():
-    #     print(k, v)
-
-    # e.matcher.register("a - b", woop2)
-    # e.matcher.register("*/a - b*", woop2)
-    # e.matcher.register(lambda x: {}, woop3)
-
-    # return m(x).generate_html()
-
-    doc = HTMLDocument()
-    documents = {'main': doc,
-                 'sections': SectionsDocument()}
-    documents = execute_documents(engine(x), documents)
-
-    return doc.data
-
-    # rval = [d for d in documents if isinstance(d, HTMLDocument)]
-
-    # return rval[0].data
-
-
-
-
-
-
-
-
-    # def clone(self, clone_matcher = False):
-    #     rval = Engine()
-    #     if clone_matcher:
-    #         rval.matcher = self.matcher.clone()
-    #     else:
-    #         rval.matcher = self.matcher
-    #     rval.components = dict(self.components)
-    #     return rval
-
-    # def enter(self, name, component):
-    #     return self.enter_all([(name, component)])
-
-    # def enter_all(self, mods):
-    #     rval = self.clone()
-    #     for name, component in mods:
-    #         self[name].append(component(rval))
-    #         rval[name] = component
-    #     return rval
-
-
-
-# class TextGenerator:
-
-#     def __init__(self, text):
-#         self.text = text
-
-#     def generate_html(self):
-#         return cgi.escape(self.text)
-
-
-# class WrapGenerator:
-
-#     def __init__(self, children):
-#         self.children = children
-
-#     def append(self, element):
-#         self.children.append(element)
-
-#     def generate_html(self):
-#         return "<div>{0}</div>".format("".join(child.generate_html()
-#                                                for child in self.children))
-
-
-
-# class Constructor:
-
-#     def on_raw(self, *text):
-#         ee
-
-#     def on_raw_parse(self, *ptree):
-#         aa
-
-#     def on_simplified_parse(self, *ptree):
-#         aaa
-
-#     def on_final(self, language, *result):
-#         eee
-
-
-# # class Emphasis(Formatter):
-# #     def __init__(self, node, em):
-# #         self.node = node
-# #         self.em = em
-# #     def 
-
-
-# class EmphasisGenerator:
-#     def __init__(self):
-#         ee
-
-
-# def emphasis(engine, node, em):
-#     subengine = engine.append('main', EmphasisGenerator)
-#     subengine.process(em)
-
-# engine.register_matcher("*em*", emphasis)
-
-
-
 
 
 def toposort(pred):
@@ -1126,4 +572,11 @@ def toposort(pred):
 
     return results
 
+
+def evaluate(x, engine):
+    doc = HTMLDocument()
+    documents = {'main': doc,
+                 'sections': SectionsDocument()}
+    documents = execute_documents(engine(x), documents)
+    return doc.data
 
