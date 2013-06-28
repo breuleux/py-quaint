@@ -97,6 +97,12 @@ class Location(object):
         else:
             return "%s:%s-%s:%s" % (l1, c1, l2, c2)
 
+    def change_start(self, n):
+        return Location(self.source, (self.start + n, self.end))
+
+    def change_end(self, n):
+        return Location(self.source, (self.start, self.end + n))
+
     def at_start(self):
         return Location(self.source, (self.start, self.start))
 

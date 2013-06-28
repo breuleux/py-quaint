@@ -23,6 +23,7 @@ from descr.util import Table, Group
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
 from quaint.engine import evaluate
+from quaint.builders import default_engine
 
 from ug.format import errors
 from quaint.displayrules import ugdescr, rules
@@ -77,6 +78,7 @@ def x_tok(s, path):
     pr = boxy_terminus(rules = rules)
     things = []
     for entry in results:
+        # things.append([str(getattr(entry, 'text', '???')), Group([entry.location])])
         things.append([str(entry), Group([entry.location])])
     pr(Table(things))
 
@@ -92,8 +94,8 @@ def x_eval(s, path):
     # print("ast", timeit(lambda: parse(Source(s, url = path)), number = 1) * 1000)
     ast = parse(Source(s, url = path))
     # print("eval", timeit(lambda: evaluate(ast), number = 1) * 1000)
-    result = evaluate(ast)
-    print("\x1B[?0;7y:h " + result + "\a")
+    result = evaluate(ast, default_engine())
+    print("\x1B[?0;7y:h <div>" + result + "</div>\a")
 
 
 if __name__ == '__main__':

@@ -1,14 +1,33 @@
 
 
-class quaintstr(str):
+class AST:
+
+    def __init__(self):
+        self.whitespace_left = ""
+        self.whitespace_right = ""
+
+
+class quaintstr(str, AST):
+
+    def __new__(cls, s, location = None):
+        ob = super(quaintstr, cls).__new__(cls, s)
+        return ob
+
     def __init__(self, s, location = None):
-        super().__init__(s)
+        super().__init__()
         self.location = location
 
+    def raw(self):
+        if not self.location:
+            return ""
+        else:
+            return self.location.get()
 
-class ASTNode:
+
+class ASTNode(AST):
 
     def __init__(self, *args, location = None):
+        super().__init__()
         self.args = list(args)
         if not location:
             for arg in args:
@@ -21,6 +40,12 @@ class ASTNode:
 
     def signature(self):
         return (self.__class__,)
+
+    def raw(self):
+        if not self.location:
+            return ""
+        else:
+            return self.location.get()
 
     def __getitem__(self, i):
         return self.args[i]
@@ -42,9 +67,9 @@ class ASTNode:
 
 class Op(ASTNode):
 
-    def __init__(self, operator, *args, location = None, operators = None):
+    def __init__(self, operator, *args, location = None, wide = None):
         super().__init__(*args, location = location)
-        self.operators = operators
+        self.wide = wide
         self.operator = operator
 
     def signature(self):
@@ -82,6 +107,7 @@ class Void(ASTNode):
 
 
 class Nullary(ASTNode):
-    def __init__(self, location = None):
+    def __init__(self, text, location = None):
+        self.text = text
         super().__init__(location = location)
 
