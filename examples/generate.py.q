@@ -24,13 +24,13 @@ constructors like `List or `Table~.
 
 * `Text produces escaped text: {Text("<b>hello</b>")}
 
-* `Gen puts pieces together: {Gen(Raw("<b>"), Text("hello"), Raw("</b>"))}
+* `Gen puts pieces together: {Gen(Raw("<b>"), "hello", Raw("</b>"))}
 
 Using `List and `Table you can easily generate content:
 
-{List(Text("one"), Text("two"), Text("three"), ordered = True)}
+{List("one", "two", "three", ordered = True)}
 
-{Table(*[[Text(i * j) for i in range(10)] for j in range(10)])}
+{Table(*[[i * j for i in range(10)] for j in range(10)])}
 
 
 Definitions

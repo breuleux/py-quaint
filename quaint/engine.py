@@ -274,6 +274,8 @@ class WSGenerator(RawGenerator):
 class ProxyGenerator(Generator):
 
     def __init__(self, element):
+        if not isinstance(element, Generator):
+            element = Text(element)
         self.element = element
 
     def docmaps(self, current):
@@ -287,6 +289,8 @@ class PartsGenerator(Generator):
     def docmaps(self, current):
         results = [(current, self, self.deps(), self.generators())]
         for child in self.parts():
+            if not isinstance(child, Generator):
+                child = TextGenerator(child)
             results += child.docmaps(current)
         return results
 
@@ -295,6 +299,8 @@ class MultiGenerator(PartsGenerator):
 
     def __init__(self, *children):
         self.children = children
+# [child if isinstance(child, Generator) else child
+#                          for child in children]
 
     def parts(self):
         return self.children

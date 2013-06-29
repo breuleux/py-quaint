@@ -56,12 +56,12 @@ def default_bindings(engine):
         (test_sequence_of('-', ast.BlockOp), 'header2', "-"),
 
         # Lists
-        ('* item', 'ulist'),
-        ('# item', 'olist'),
+        ('wide [* item]', 'ulist'),
+        ('wide [# item]', 'olist'),
 
         # Tables
-        ('+ row', 'table_header'),
-        ('| row', 'table_row'),
+        ('wide [+ row]', 'table_header'),
+        ('wide [| row]', 'table_row'),
 
         # Others
         ('name <- body', 'setvar'),
