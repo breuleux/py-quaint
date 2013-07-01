@@ -15,24 +15,24 @@ python %
 
 Clarifying the code:
 
-* `[@wrap_whitespace] ensures that the whitespace around the
+* python`[@wrap_whitespace] ensures that the whitespace around the
   expression, if there is any, is kept. You can do it yourself too --
   the whitespace is available in `node.whitespace_left and
-  `[node.whitespace_right]~.
+  `node.whitespace_right.
 
 * `Gen generates each of its arguments.
 
 * `Raw generates the given text without html escaping it (if you want
-  to escape, use `Text~).
+  to escape, use `Text).
 
 * `engine(x) will call the engine recursively on the argument, so for
   instance if `x is a caret expression it will be wrapped too.
 
-* Note that we only wrap the `right argument to `[^]~.
+* Note that we only wrap the `right argument to `[^].
 
-* `[engine['maybe left ^ right'] = sup] extends the engine so that an
-  expression like `x^y results in a call to `[sup(engine, x^y, left =
-  x, right = y)]~.
+* python`[engine['maybe left ^ right'] = sup] extends the engine so
+  that an expression like `x^y results in a call to
+  python`[sup(engine, x^y, left = x, right = y)].
   
 * In the pattern, `[maybe left] means that the argument `left might be
   empty. Otherwise the pattern will require a non-empty argument.
@@ -40,8 +40,8 @@ Clarifying the code:
 * The update to the engine will only kick in for the expressions that
   come after it.
 
-
 Let's try it:
+
 
 Before
 ------
@@ -49,6 +49,7 @@ Before
 3^2 + 4^2 = 5[^2]. ^[I can superscript whole sentences, too!]
 Exponent t^o^w^e^r^s work splendidly. Write \\\^ to escape \^:
 \^^\^^\^^\^^\^^\^
+
 
 After
 -----
@@ -63,4 +64,25 @@ After
 3^2 + 4^2 = 5[^2]. ^[I can superscript whole sentences, too!]
 Exponent t^o^w^e^r^s work splendidly. Write \\\^ to escape \^:
 \^^\^^\^^\^^\^^\^
+
+
+An even simpler way
+-------------------
+
+You can use the `wrapper function to create the above function
+automatically. For instance, to define subscripts as `a_b (this will
+not disable emphasis since emphasis requires `[_] in prefix position):
+
+python %
+  {
+    engine['lhs _ expr'] = wrapper('sub')
+  }
+
+{engine['lhs _ expr'] = wrapper('sub')}
+
+A_ij = [sum_k](B_ik C_kj)
+
+By convention the arguments must be named `lhs (optional) and `expr
+(mandatory). `expr (the right hand side) is the one that will be
+wrapped.
 

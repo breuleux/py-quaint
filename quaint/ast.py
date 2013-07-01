@@ -19,7 +19,7 @@ class quaintstr(str, AST):
 
     def raw(self):
         if not self.location:
-            return ""
+            return self
         else:
             return self.location.get()
 

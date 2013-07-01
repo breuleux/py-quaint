@@ -145,7 +145,7 @@ class Engine:
     def register(self, pattern, function, first_character = True):
 
         if isinstance(pattern, str):
-            pattern = create_pattern(parse(Source(pattern, url = None)), [])
+            pattern = create_pattern(parse(pattern), [])
 
         if isinstance(pattern, tuple) or isinstance(pattern, type):
             def p(ptree):
@@ -187,11 +187,39 @@ class TextDocument:
     def __init__(self):
         self.data = ""
 
-    def append(self, data):
+    def add(self, data):
         self.data += data
 
     def get(self):
         return self.data
+
+
+class SetDocument:
+
+    def __init__(self):
+        self.data = set()
+
+    def add(self, *entry):
+        self.data.add(entry)
+
+
+class RepoDocument:
+
+    def __init__(self):
+        self.data = {}
+
+    def get(self, key, default):
+        return self.data.get(key, default)
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+    def add(self, key, value):
+        self[key] = value
+
 
 
 class HTMLDocument(TextDocument):
@@ -207,6 +235,7 @@ class SectionsDocument:
 
     def add(self, name, contents):
         self.sections.append((name, contents))
+
 
 
 
@@ -227,6 +256,34 @@ class Generator:
         return results
 
 
+class GeneratorFor(Generator):
+
+    def __init__(self, docname, *args):
+        self.docname = docname
+        self.args = args
+
+    def generate(self, docs):
+        docs[self.docname].add(*self.args)
+
+    def generators(self):
+        return {self.docname: self.generate}
+
+
+
+class GeneratorFrom(Generator):
+
+    def __init__(self, docname, f):
+        self.docname = docname
+        self.f = f
+
+    def generate_main(self, docs):
+        docs['main'].add(self.f(docs[self.docname]))
+
+    def deps(self):
+        return {'main': self.docname}
+
+
+
 class KeywordGenerator(Generator):
 
     def __init__(self, associations):
@@ -236,9 +293,9 @@ class KeywordGenerator(Generator):
         doc = docs['main']
         for cls in doc.__class__.__mro__:
             if cls in self.associations:
-                doc.append(self.associations[cls])
+                doc.add(self.associations[cls])
                 return
-        doc.append(self.associations.get(False, "?"))
+        doc.add(self.associations.get(False, "?"))
 
 
 class RawGenerator(Generator):
@@ -247,7 +304,7 @@ class RawGenerator(Generator):
         self.text = str(text)
 
     def generate_main(self, docs):
-        docs['main'].append(self.text)
+        docs['main'].add(self.text)
 
 
 class TextGenerator(RawGenerator):
@@ -259,7 +316,7 @@ class TextGenerator(RawGenerator):
         text = self.re1.sub("", self.text)
         text = self.re2.sub("\\1", text)
         # print(repr(self.text), repr(text))
-        docs['main'].append(cgi.escape(text))
+        docs['main'].add(cgi.escape(text))
 
 
 class WSGenerator(RawGenerator):
@@ -268,7 +325,7 @@ class WSGenerator(RawGenerator):
 
     def generate_main(self, docs):
         text = self.re1.sub("", self.text)
-        docs['main'].append(text)
+        docs['main'].add(text)
 
 
 class ProxyGenerator(Generator):
@@ -339,7 +396,7 @@ class SectionGenerator(RedirectGenerator):
         docs['sections'].add(self.section_name, docs['redirect'])
 
     def generate_main(self, docs):
-        docs['main'].append(docs['redirect'].data)
+        docs['main'].add(docs['redirect'].data)
 
 
 class TOCGenerator(Generator):
@@ -351,8 +408,8 @@ class TOCGenerator(Generator):
         main = docs['main']
         sections = docs['sections']
         for name, section in sections.sections:
-            main.append(section.data)
-            main.append("<br/>")
+            main.add(section.data)
+            main.add("<br/>")
 
 
 class WrapGenerator(PartsGenerator):
@@ -479,8 +536,8 @@ def codehl(lang, code):
             lexer = pygments.lexers.get_lexer_by_name(lang)
         except pygments.util.ClassNotFound:
             lexer = pygments.lexers.TextLexer()
-    hlcode = pygments.highlight(code, lexer,
-                                pygments.formatters.HtmlFormatter(nowrap = True))
+    fmt = pygments.formatters.HtmlFormatter(nowrap = True)
+    hlcode = pygments.highlight(code, lexer, fmt)
     return hlcode
 
 
@@ -579,10 +636,43 @@ def toposort(pred):
     return results
 
 
-def evaluate(x, engine):
-    doc = HTMLDocument()
-    documents = {'main': doc,
-                 'sections': SectionsDocument()}
-    documents = execute_documents(engine(x), documents)
-    return doc.data
+def generate_html_file(documents):
+
+    template = dedent("""
+    <html>
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        {xlinks}
+        <title>
+          {title}
+        </title>
+        <style>
+          {style}
+        </style>
+      </head>
+      <body>
+        <div class="main">
+          {contents}
+        </div>
+        <script>
+          {script}
+        </script>
+      </body>
+    </html>
+    """)
+
+    xlinks = []
+    for type, link in documents['xlinks'].data:
+        xlinks.append('<link rel={type} href="{link}">'.format(
+                type = type, link = link))
+
+    return template.format(style = documents['css'].data,
+                           title = documents['meta'].get('title', 'Untitled'),
+                           xlinks = "\n".join(xlinks),
+                           script = documents['js'].data,
+                           contents = documents['main'].data)
+
+
+def evaluate(x, engine, documents):
+    execute_documents(engine(x), documents)
 

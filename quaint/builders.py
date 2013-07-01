@@ -40,12 +40,18 @@ def default_bindings(engine):
 
         # Brackets
         (('[]', [ast.Void, 'body', ast.Void]), 'bracket'),
+        ("(body)", 'parens'),
         ("{body}", 'eval'),
         ("maybe x <f> maybe y", 'feval'),
 
         # Emphasis
         ('_ expr', 'em'),
         ('__ expr', 'strong'),
+
+        # Links
+        ('text @ maybe link', 'link'),
+        ('maybe text @ type ! maybe link', 'special_link'),
+        ('maybe text @# label', 'anchor'),
 
         # Code
         ('maybe lang ` code', 'code'),
@@ -54,6 +60,12 @@ def default_bindings(engine):
         # Headers
         (test_sequence_of('=', ast.BlockOp), 'header1', "="),
         (test_sequence_of('-', ast.BlockOp), 'header2', "-"),
+        ('wide [= title]', 'header1'),
+        ('wide [== title]', 'header2'),
+        ('wide [=== title]', 'header3'),
+        ('wide [==== title]', 'header4'),
+        ('wide [===== title]', 'header5'),
+        ('wide [====== title]', 'header6'),
 
         # Lists
         ('wide [* item]', 'ulist'),
@@ -64,6 +76,8 @@ def default_bindings(engine):
         ('wide [| row]', 'table_row'),
 
         # Others
+        ('wide [maybe source >> quote]', 'quote'),
+        (';; x', 'ignore'),
         ('name <- body', 'setvar'),
 
         ]
@@ -94,4 +108,19 @@ def default_engine():
     default_bindings(engine)
     engine.environment['engine'] = engine
     return engine
+
+
+def html_documents():
+
+    documents = {
+        'main': mod_engine.HTMLDocument(),
+        'css': mod_engine.TextDocument(),
+        'js': mod_engine.TextDocument(),
+        'links': mod_engine.RepoDocument(),
+        'xlinks': mod_engine.SetDocument(),
+        'sections': mod_engine.SectionsDocument(),
+        'meta': mod_engine.RepoDocument(),
+        }
+
+    return documents
 

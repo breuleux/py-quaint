@@ -1,11 +1,24 @@
 
+<meta>
+  title: Features
+  author: Olivier Breuleux
+
+
 Section
 =======
 
-_Emphasis, __[strong emphasis], emphasis on syl[_la]ble,
-`verbatim. You will need [square brackets] around the argument if it
-is more than one word.  Operator characters like \[, \] or \_ can be
-escaped with \\.
+My name is [<meta> author].
+
+* _Emphasis
+* __[strong emphasis]
+  * emphasis on syl[_la]ble
+* `verbatim
+* link@http://breuleux.net
+  * [link to section]@subsection
+
+You will need [square brackets] around the argument if it is more than
+one word. Operator characters like \[, \] or \_ can be escaped with
+\\.
 
 The character \~ behaves like a space, but it is omitted from the
 out~put, so you can highlight _syl~lables with it as well.
@@ -45,3 +58,12 @@ __
   Pretty much any operator can take an indented block. So this whole
   paragraph is in bold.
 
+
+Use `[[<html> [...]]] to insert literal HTML: [<html> [<b>hello</b>]].
+<html>
+  <div>
+    <code>&lt;html&gt;</code> followed by an <b>indented block</b> also works.
+  </div>
+
+In Quaint, outside of html mode, `[<...>] does not define a tag. It
+defines an operator, so there is no need for `[</html>].

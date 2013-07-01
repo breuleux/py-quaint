@@ -238,11 +238,12 @@ class FixityDisambiguator(TokenizerWrapper):
         if n == 0:
             return
         elif pfx and sfx:
-            if n > 1:
-                raise SyntaxError["ambiguous_nullary"](operators = self.buffer[start:])
-            elif n == 1:
-                self.buffer[0].fixity = None
-                self.buffer[0].type = "nullary"
+            # if n > 1:
+            #     raise SyntaxError["ambiguous_nullary"](operators = self.buffer[start:])
+            # elif n == 1:
+            for i in range(start, len(self.buffer)):
+                self.buffer[i].fixity = None
+                self.buffer[i].type = "nullary"
         elif pfx:
             for i in range(start, len(self.buffer)):
                 self.buffer[i].fixity = "prefix"

@@ -3,8 +3,8 @@
 import re
 from .operparse import (
     SubTokenizer, Tokenizer, Token, Void, SyntaxError,
-    FixityDisambiguator, Alternator, Location, TokenizerWrapper,
-    tokenizer_wrapper
+    FixityDisambiguator, Alternator, Source, Location,
+    TokenizerWrapper, tokenizer_wrapper
     )
 from .operparse.parse import Operator, operator_parse
 from . import ast
@@ -16,17 +16,17 @@ from . import ast
 
 # Characters that define operators
 chr_op1 = r"""
-+ - * / ^ = % # $ @ & | ! ? _ ` < >
++ - * / ^ = % # $ @ & | ! ? _ ` < > ; :
 """.split()
 
 chr_op2 = r"""
-, ;
+, .
 """.split()
 
 chr_op = chr_op1 + chr_op2
 
 all_op = chr_op + """
-~ \n [ ] { }
+~ \n [ ] { } ( )
 """.split(" ") #+ [" "]
 
 def rx_choice(chars, negate = False):
@@ -110,15 +110,16 @@ def m_operator(fixity):
 standard_matchers = [
 
     # Brackets
-    ("[{", mkre("[\\[\\{]"), True, m_operator("prefix")),
-    ("]}", mkre("[\\]\\}]"), True, m_operator("suffix")),
+    ("[{(", mkre("[\\[\\{\\(]"), True, m_operator("prefix")),
+    ("]})", mkre("[\\]\\}\\)]"), True, m_operator("suffix")),
 
     # Generic
     (chr_op1, mkre(rx_choice(chr_op1) + "+"), True, m_operator("?fix")),
-    (chr_op2, mkre(rx_choice(chr_op2)), True, m_operator("infix")),
+    (',', mkre(rx_choice([','])), True, m_operator("infix")),
+    ('.', mkre(rx_choice(['.'])), True, m_operator("?fix")),
 
     # Rest
-    (True, mkre("(\\\\{chr}|{nochr})+".format(
+    (True, mkre(r"(\\\\|\\{chr}|{nochr})+".format(
                 chr = rx_choice(all_op + [" "]),
                 nochr = rx_choice(all_op + [" "], negate = True))),
      True, m_id),
@@ -157,12 +158,16 @@ def adjust_locations(tokenizer):
         rightmost = loc.end
         yield token
 
-def sandwich(left, right, params):
+def sandwich(left, right, params, zerolength = False):
     # TODO: change the locations of left and right
     # or maybe not.
-    location = Location(left.location.source if left else right.location.source,
-                        (left.location.end if left else right.location.start,
-                         right.location.start if right else left.location.end))
+    source = left.location.source if left else right.location.source
+    start = left.location.end if left else right.location.start
+    if zerolength:
+        end = start
+    else:
+        end = right.location.start if right else left.location.end
+    location = Location(source, (start, end))
     is_operator = params.get("type", None) == 'operator'
     return Token(location = location,
                  space_before = left.space_after if left else 0,
@@ -191,7 +196,7 @@ def add_indent_and_linebreaks(tokenizer):
             if (not ignore_if_lineop
                 or ((not last or not last.line_operator)
                     and (not token or not token.line_operator))):
-                yield sandwich(last, token, insert)
+                yield sandwich(last, token, insert, True)
 
         to_sandwich = []
 
@@ -255,6 +260,9 @@ def inherent_fixity(tok):
     if tok.text == '<' and wsl is not None:
         return "infix"
     elif tok.text == '>' and wsr is not None:
+        return "infix"
+    elif (tok.text == ':'
+          and wsl == 0 and wsr is not None):
         return "infix"
 
     if ((wsl is not None and wsr is not None)
@@ -320,14 +328,18 @@ def make_operators(tokenizer):
         ')I': (0, 'l', ['[']),
         ']': (1, 'l', ['[']),
         '}': (1, 'l', ['{']),
-        '>': (99, 'l', ['<']),
+        '>': (90, 'l', ['<']),
+        ')': (91, 'l', ['(']),
+        ',': (100, 'l', None),
         }
     
     right_priorities = {
         'I(': (0, 'l', [')I']),
         '[': (1, 'l', [']']),
         '{': (1, 'l', ['}']),
-        '<': (99, 'l', ['>']),
+        '<': (90, 'l', ['>']),
+        '(': (91, 'l', [')']),
+        ',': (100, 'l', None),
         }
 
     for token in tokenizer:
@@ -360,6 +372,8 @@ def make_operators(tokenizer):
             elif token.fixity == 'suffix':
                 wide = widths[0]
                 rp = p_immediate
+                if token.text == '.' and not wide:
+                    priority = 99
             else:
                 wide = widths[0] or widths[1]
 
@@ -421,6 +435,9 @@ def finalize(x):
         elif op_text == ['{', '}']:
             r = ast.InlineOp('{}', *args, wide = wide)
 
+        elif op_text == ['(', ')']:
+            r = ast.InlineOp('()', *args, wide = wide)
+
         elif op_text == ['<', '>']:
             r = ast.InlineOp('<>', *args, wide = wide)
 
@@ -431,19 +448,22 @@ def finalize(x):
                 args = args[:1] + args[1].args + args[-1:]
 
             if isinstance(args[0], ast.InlineOp) and args[0].operator:
+                ind = [ast.BlockOp('I', args[0][-1], *args[1:-1],
+                                   wide = True)]
                 r = ast.InlineOp(args[0].operator,
-                                 *(args[0][:-1]
-                                   + [ast.BlockOp('I', args[0][-1], *args[1:-1],
-                                                  wide = True)]),
+                                 *(args[0][:-1] + ind),
                                  wide = args[0].wide)
+
             elif isinstance(args[0], ast.Nullary):
+                ind = ast.BlockOp('I', *args[1:-1],
+                                  wide = True)
                 r = ast.InlineOp(args[0].text,
                                  ast.Void(),
-                                 ast.BlockOp('I', *args[1:-1],
-                                             wide = True),
+                                 ind,
                                  wide = True)
+
             else:
-                r = ast.BlockOp('I', *args[:-1], wide = wide)
+                r = ind = ast.BlockOp('I', *args[:-1], wide = wide)
 
         elif ops[0].args[0].line_operator:
             if ops[0].args[0].text:
@@ -480,6 +500,8 @@ def order(left, right):
 
 
 def parse(source):
+    if not isinstance(source, Source):
+        source = Source(source, url = None)
     t = tokenize(source)
     # t = list(make_operators_1(t))
     t = list(make_operators(t))
@@ -500,13 +522,71 @@ def strip_and_ws(text):
     return text[:b], text[b:e], text[e:]
 
 
+# def fix_whitespace(ptree, owns_left, owns_right):
+
+#     if isinstance(ptree, ast.quaintstr):
+#         left, text, right = strip_and_ws(ptree)
+#         loc = ptree.location.change_start(len(left)).change_end(-len(right))
+#         ptree = ast.quaintstr(text)
+#         ptree.location = loc
+
+#     elif isinstance(ptree, ast.Nullary):
+#         left, text, right = strip_and_ws(ptree.text)
+#         ptree.text = text
+
+#     elif isinstance(ptree, ast.Void):
+#         left, right = ptree.text, ptree.text
+#         ptree.text = ""
+
+#     elif isinstance(ptree, ast.Op):
+#         args = ptree.args
+#         if len(args) == 0:
+#             raise Exception("Ops should have at least one argument")
+#         elif len(args) == 1:
+#             arg, left, right = fix_whitespace(args[0], False, False)
+#             ptree.args = [arg]
+#         else:
+#             arg0, left, _ = fix_whitespace(args[0], False, True)
+#             new_args = [arg0]
+#             for arg in args[1:-1]:
+#                 argi, _, _ = fix_whitespace(arg, True, True)
+#                 new_args.append(argi)
+#             argn, _, right = fix_whitespace(args[-1], True, False)
+#             new_args.append(argn)
+#             ptree.args = new_args
+
+#     else:
+#         raise Exception("Unknown node", ptree)
+
+#     if owns_left and owns_right:
+#         ptree.whitespace_left = left
+#         ptree.whitespace_right = right
+#         return (ptree, None, None)
+#     elif owns_left:
+#         ptree.whitespace_left = left
+#         ptree.whitespace_right = ""
+#         return (ptree, None, right)
+#     elif owns_right:
+#         ptree.whitespace_left = ""
+#         ptree.whitespace_right = right
+#         return (ptree, left, None)
+#     else:
+#         return (ptree, left, right)
+
+
+
+
+
+
 def fix_whitespace(ptree, owns_left, owns_right):
+
+    loc = ptree.location
 
     if isinstance(ptree, ast.quaintstr):
         left, text, right = strip_and_ws(ptree)
-        loc = ptree.location.change_start(len(left)).change_end(-len(right))
         ptree = ast.quaintstr(text)
-        ptree.location = loc
+        # loc = loc.change_start(len(left)).change_end(-len(right))
+        # ptree.location = loc
 
     elif isinstance(ptree, ast.Nullary):
         left, text, right = strip_and_ws(ptree.text)
@@ -539,17 +619,25 @@ def fix_whitespace(ptree, owns_left, owns_right):
     if owns_left and owns_right:
         ptree.whitespace_left = left
         ptree.whitespace_right = right
-        return (ptree, None, None)
+        rval = (ptree, None, None)
     elif owns_left:
         ptree.whitespace_left = left
         ptree.whitespace_right = ""
-        return (ptree, None, right)
+        rval = (ptree, None, right)
     elif owns_right:
         ptree.whitespace_left = ""
         ptree.whitespace_right = right
-        return (ptree, left, None)
+        rval = (ptree, left, None)
     else:
-        return (ptree, left, right)
+        rval = (ptree, left, right)
+
+    if loc:
+        loc = loc.change_end(-len(right))
+        loc = loc.change_start(len(left))
+        ptree.location = loc
+
+    return rval
+
 
 
 
