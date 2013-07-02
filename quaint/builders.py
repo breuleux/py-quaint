@@ -79,6 +79,7 @@ def default_bindings(engine):
         ('wide [maybe source >> quote]', 'quote'),
         (';; x', 'ignore'),
         ('name <- body', 'setvar'),
+        ('name <= maybe type : file', 'load_in_var'),
 
         ]
 

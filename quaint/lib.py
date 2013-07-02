@@ -3,6 +3,7 @@
 import inspect
 from . import ast, parser, engine as mod_engine
 from .engine import (
+    format_anchor,
     dedent,
     collapse,
     codehl,
@@ -23,6 +24,13 @@ from .engine import (
 )
 pyeval = eval
 
+try:
+    import yaml as pyyaml
+except ImportError:
+    pyyaml = None
+
+import json as pyjson
+
 
 def wrap_whitespace(f):
     def f2(engine, node, *args, **kwargs):
@@ -31,6 +39,12 @@ def wrap_whitespace(f):
                    Text(node.whitespace_right))
     f2.__name__ = f.__name__
     return f2
+
+def source_nows(node):
+    if isinstance(node, str) and not hasattr(node, 'raw'):
+        return node
+    else:
+        return node.raw()
 
 def source(node):
     return (node.whitespace_left
@@ -193,13 +207,10 @@ def parse_link(link):
         return Text(link)
     else:
         return GenFrom('links',
-                       lambda links: links.get(link_escape(link), link))
+                       lambda links: links.get(format_anchor(link), link))
 
 
 link_handlers = {}
-
-def link_escape(s):
-    return s.lower().replace(' ', '-').replace('\n', '-').replace('~', '')
 
 def link_type(type):
     def wrap(f):
@@ -292,12 +303,12 @@ def header_n(n):
         if title is None:
             title, _ = node.args
         title = title.raw()
-        anchor = link_escape(title)
+        anchor = format_anchor(title)
         return Gen(GenFor('links', anchor, '#'+anchor),
                    Raw('<h%s id="' % n),
                    Text(anchor),
                    Raw('">'),
-                   Section(title, engine(title)),
+                   Section(anchor, engine(title), n),
                    Raw("</h%s>" % n))
     return header
 
@@ -380,6 +391,52 @@ def setvar(engine, node, name, body):
     return Raw("")
 
 
+load_handlers = {}
+
+def load_type(type):
+    def wrap(f):
+        load_handlers[type] = f
+        return f
+    return wrap
+
+@load_type('yaml')
+def load_yaml(engine, node, file):
+    if not pyyaml:
+        raise ImportError("yaml is not installed!")
+    results = pyyaml.safe_load(open(source(file)).read())
+    return results
+
+@load_type('json')
+def load_json(engine, node, file):
+    results = pyjson.load(source(file))
+    return results
+
+def load_in_var(engine, node, name, type, file):
+    if isinstance(type, ast.Void):
+        type = source_nows(file).split(".")[-1]
+    results = load_handlers[type](engine, node, file)
+    engine.environment[source_nows(name)] = results
+    return Raw("")
+
+
+def yaml(engine, node, expr):
+    if not pyyaml:
+        raise ImportError("yaml is not installed!")
+    results = pyyaml.safe_load(source(expr))
+    if not isinstance(results, dict):
+        raise Exception("the yaml should define a dictionary")
+    for k, v in results.items():
+        engine.environment[k] = v
+    return Raw("")
+
+def json(engine, node, expr):
+    results = pyjson.loads(source(expr))
+    if not isinstance(results, dict):
+        raise Exception("the json should define a dictionary")
+    for k, v in results.items():
+        engine.environment[k] = v
+    return Raw("")
+
 
 def grabdefs(engine, x):
 
@@ -414,4 +471,22 @@ def meta(engine, node, defs):
 
     else:
         return grabdefs(engine, defs)
+
+
+def show_args(engine, node, **params):
+    args = []
+    for k, v in sorted(params.items()):
+        args += [Raw("<tr><td>"),
+                 Raw(k),
+                 Raw("</td><td>"),
+                 Raw(repr(source(v))),
+                 Raw("</td></tr>")]
+    return Gen(Raw('<table class="show_args">'),
+               Raw("<tr><th colspan=2>"),
+               Raw(node.operator),
+               Raw("</th></tr>"),
+               Gen(*args),
+               Raw("</table>"))
+
+
 

@@ -6,9 +6,12 @@ from .parser import parse, all_op, rx_choice, whitespace_re
 from .operparse import Source
 from collections import defaultdict
 
-import pygments
-import pygments.lexers
-import pygments.formatters
+try:
+    import pygments
+    import pygments.lexers
+    import pygments.formatters
+except ImportError:
+    pygments = None
 
 
 def create_pattern(ptree, properties):
@@ -228,13 +231,33 @@ class HTMLDocument(TextDocument):
         return self.data
 
 
+
 class SectionsDocument:
 
-    def __init__(self):
-        self.sections = []
+    def __init__(self, name = None, contents = None):
+        self.name = name
+        self.contents = contents
+        self.subsections = []
 
-    def add(self, name, contents):
-        self.sections.append((name, contents))
+    def add(self, name, contents, level):
+        if level == 1:
+            self.subsections.append(SectionsDocument(name, contents))
+        else:
+            if not self.subsections:
+                section = SectionsDocument()
+            else:
+                section = self.subsections[-1]
+            section.add(name, contents, level - 1)
+
+
+
+# class SectionsDocument:
+
+#     def __init__(self):
+#         self.sections = []
+
+#     def add(self, name, contents):
+#         self.sections.append((name, contents))
 
 
 
@@ -384,8 +407,9 @@ class RedirectGenerator(Generator):
 
 class SectionGenerator(RedirectGenerator):
 
-    def __init__(self, section_name, contents):
+    def __init__(self, section_name, contents, level):
         self.section_name = section_name
+        self.level = level
         super().__init__(contents)
 
     def deps(self):
@@ -393,7 +417,7 @@ class SectionGenerator(RedirectGenerator):
                 'main': 'redirect'}
 
     def generate_sections(self, docs):
-        docs['sections'].add(self.section_name, docs['redirect'])
+        docs['sections'].add(self.section_name, docs['redirect'], self.level)
 
     def generate_main(self, docs):
         docs['main'].add(docs['redirect'].data)
@@ -404,12 +428,24 @@ class TOCGenerator(Generator):
     def deps(self):
         return {'main': 'sections'}
 
+    def format_section(self, s, results, bah):
+        if s.name is not None:
+            results += ['<li><a href="#',
+                        s.name,
+                        '">',
+                        s.contents.data,
+                        "</a></li>"]
+        if s.subsections:
+            results.append("<ul>")
+            for subs in s.subsections:
+                self.format_section(subs, results, True)
+            results.append("</ul>")
+        return results
+
     def generate_main(self, docs):
         main = docs['main']
         sections = docs['sections']
-        for name, section in sections.sections:
-            main.add(section.data)
-            main.add("<br/>")
+        main.add("".join(self.format_section(sections, [], False)))
 
 
 class WrapGenerator(PartsGenerator):
@@ -521,6 +557,9 @@ class ParagraphGenerator(WrapGenerator):
             return None
 
 
+def format_anchor(s):
+    return s.lower().replace(' ', '-').replace('\n', '-').replace('~', '')
+
 def dedent(code):
     lines = code.split("\n")
     lines2 = [line for line in lines if line]
@@ -529,6 +568,8 @@ def dedent(code):
 
 
 def codehl(lang, code):
+    if not pygments:
+        return cgi.escape(code)
     if lang == 'auto':
         lexer = pygments.lexers.guess_lexer(code)
     else:

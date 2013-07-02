@@ -10,8 +10,7 @@ to their own individual needs.
 * __Terse: Quaint does not get in your way. There is no boilerplate,
   no spurious markup. If you do something _[a lot], you can make it as
   short as you want. (Link to Wikipedia a lot? Four lines of Python
-  will let you write `[/Batman] to link to Batman's Wikipedia
-  article).
+  will let you write /Batman to link to Batman's Wikipedia article).
 
 * __Complete: all essential functionality (links, bullet points, etc.)
   is already built-in, plus a few _very useful extras (code
