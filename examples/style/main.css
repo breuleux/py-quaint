@@ -117,9 +117,13 @@ blockquote blockquote {
     margin-left: 5px;
 }
 
-
 dt {
     font-weight: bold;
+}
+
+dd {
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 

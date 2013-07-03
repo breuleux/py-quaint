@@ -146,6 +146,15 @@ def inline_error_handler(engine, ptree, exc):
                           RawGenerator(ptree.whitespace_right))
 
 
+class MetaNode:
+
+    def __init__(self, *args):
+        self.args = args
+
+    def __call__(self, engine):
+        return self.process(engine, *self.args)
+
+
 class Engine:
 
     def __init__(self, error_handler = None):
@@ -193,6 +202,9 @@ class Engine:
 
         self.ctors[first_character].insert(0, (p, function))
 
+    def extend_environment(self, **ext):
+        self.environment.update(ext)
+
     def __setitem__(self, item, value):
         self.register(item, value)
 
@@ -226,6 +238,15 @@ class TextDocument:
     def get(self):
         return self.data
 
+    def clone(self):
+        rval = self.__class__()
+        rval.data = self.data
+        return rval
+
+
+class HTMLDocument(TextDocument):
+    pass
+
 
 class SetDocument:
 
@@ -235,6 +256,11 @@ class SetDocument:
     def add(self, *entry):
         self.data.add(entry)
 
+    def clone(self):
+        rval = self.__class__()
+        rval.data = set(self.data)
+        return rval
+
 
 class ListDocument:
 
@@ -243,6 +269,11 @@ class ListDocument:
 
     def add(self, *entry):
         self.data.append(entry)
+
+    def clone(self):
+        rval = self.__class__()
+        rval.data = list(self.data)
+        return rval
 
 
 class RepoDocument:
@@ -262,13 +293,10 @@ class RepoDocument:
     def add(self, key, value):
         self[key] = value
 
-
-
-class HTMLDocument(TextDocument):
-
-    def get(self):
-        return self.data
-
+    def clone(self):
+        rval = self.__class__()
+        rval.data = dict(self.data)
+        return rval
 
 
 class SectionsDocument:
@@ -343,6 +371,46 @@ class GeneratorFrom(Generator):
 
     def deps(self):
         return {'main': self.docname}
+
+
+def fork_doc(docs, docname, gen):
+    if docname in docs:
+        return docs[docname].clone()
+    else:
+        return gen()
+
+class HTMLDocumentGenerator(Generator):
+
+    def __init__(self, gen):
+        self.gen = gen
+
+    def docmaps(self, current):
+
+        new_documents = dict(
+            main = fork_doc(current, 'main', HTMLDocument),
+            css = fork_doc(current, 'css', TextDocument),
+            js = fork_doc(current, 'js', TextDocument),
+            links = fork_doc(current, 'links', RepoDocument),
+            xlinks = fork_doc(current, 'xlinks', SetDocument),
+            meta = fork_doc(current, 'meta', RepoDocument),
+            sections = SectionsDocument(),
+            errors = ListDocument())
+
+        new = dict(current, **new_documents)
+        current = dict(current, **{'_sub_' + k: v
+                                   for k, v in new_documents.items()})
+
+        return ([(current, self, self.deps(), self.generators())]
+                + self.gen.docmaps(new))
+
+    def deps(self):
+        return {'main': {'_sub_' + x
+                         for x in 'main css js links xlinks meta sections error'.split()}}
+
+    def generate_main(self, docs):
+        unmangled_docs = {k[5:]: v
+                          for k, v in docs.items() if k.startswith('_sub_')}
+        return generate_html_document(unmangled_docs)
 
 
 

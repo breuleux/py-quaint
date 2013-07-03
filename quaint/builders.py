@@ -27,8 +27,11 @@ def default_bindings(engine):
 
     bindings = [
 
+        # MetaNodes
+        (mod_engine.MetaNode, lambda engine, node: node(engine)),
+
         # Basic AST types
-        (ast.Void, 'raw'),
+        (ast.Void, 'text'),
         (ast.Nullary, 'text'),
         (str, 'text'),
         (ast.Op, 'op'),
@@ -42,7 +45,7 @@ def default_bindings(engine):
         (('[]', [ast.Void, 'body', ast.Void]), 'bracket'),
         ("(body)", 'parens'),
         ("{body}", 'eval'),
-        ("maybe x <f> maybe y", 'feval'),
+        ("<f> x", 'feval'),
 
         # Emphasis
         ('_ expr', 'em'),

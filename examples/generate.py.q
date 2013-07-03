@@ -50,21 +50,19 @@ their documentation!
 `[<>] Operators
 ---------------
 
-The `[x <f> y] syntax applies the function defined by the expression
-`f to the arguments `x and `y~. To give a simple example:
+The `[<f> x] syntax applies the function defined by the expression `f
+to the argument `x. To give a simple example:
 
 {
-  def swap(engine, node, x, y):
-      return Gen(engine(y), engine(x))
+  def sup(engine, node, x):
+      return Gen(Raw("<sup>"), engine(x), Raw("</sup>"))
 }
 
-I can now [words <swap> swap], though white space is problematic in
-this instance.
+I can now write <sup>superscript.
 
 A useful operator is `wrapper(...), which lets you wrap expressions
-using arbitrary tags and classes. Exponents,
-<wrapper("sup")>[for instance]~. Or
-[<wrapper("a", href = "http://breuleux.net")> a link].
+using arbitrary tags and classes. Exponents, <wrapper("sup")>[for
+instance]. Or <wrapper("a", href = "http://breuleux.net")> a link.
 
 <wrapper("pre", classes = "some_class")>
   Or a whole indented block.

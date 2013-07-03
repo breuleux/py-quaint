@@ -257,8 +257,10 @@ def inherent_fixity(tok):
         wsl = tok.space_before if not tok.height_before else None
         wsr = tok.space_after if not tok.height_after else None
 
-    if tok.text == '<' and wsl is not None:
-        return "infix"
+    # if tok.text == '<' and wsl is not None:
+    #     return "infix"
+    if tok.text == '<':
+        return "prefix"
     elif tok.text == '>' and wsr is not None:
         return "infix"
     elif (tok.text == ':'
@@ -630,6 +632,9 @@ def fix_whitespace(ptree, owns_left, owns_right):
         rval = (ptree, left, None)
     else:
         rval = (ptree, left, right)
+
+    if isinstance(ptree, ast.Void) and owns_left and owns_right:
+        ptree.whitespace_right = ""
 
     if loc:
         loc = loc.change_end(-len(right))

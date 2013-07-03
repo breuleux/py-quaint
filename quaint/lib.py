@@ -1,5 +1,5 @@
 
-
+import cgi
 import inspect
 from . import ast, parser, engine as mod_engine
 from .parser import parse
@@ -71,7 +71,12 @@ def make_tags(tag, attributes, engine, args):
 def parts_wrapper(w0, *wrappers):
 
     if isinstance(w0, tuple):
-        argnames = w0
+        if w0[0] is True:
+            backwards = True
+            argnames = w0[1:]
+        else:
+            backwards = False
+            argnames = w0
     else:
         argnames = None
         wrappers = (w0,) + wrappers
@@ -80,8 +85,12 @@ def parts_wrapper(w0, *wrappers):
     def wrap(engine, node, *args, **kwargs):
 
         if args and argnames is not None:
-            for arg, name in zip(args, argnames):
-                kwargs[name] = arg
+            if backwards:
+                for arg, name in zip(reversed(args), reversed(argnames)):
+                    kwargs[name] = arg
+            else:
+                for arg, name in zip(args, argnames):
+                    kwargs[name] = arg
 
         gens = []
         for w in wrappers:
@@ -113,12 +122,12 @@ def parts_wrapper(w0, *wrappers):
 
 
 def wrapper(tag = "span", **attributes):
-    return parts_wrapper(('lhs', 'expr'),
-                         dict(arg = "lhs?"),
-                         dict(arg = "expr",
-                              tag = tag,
-                              **attributes))
-
+    return parts_wrapper(
+        (True, 'lhs', 'expr'),
+        dict(arg = "lhs?"),
+        dict(arg = "expr",
+             tag = tag,
+             **attributes))
 
 
 
@@ -268,6 +277,10 @@ def extract_and_codehl(lang, code, do_dedent = True):
     code = source(code)
     if do_dedent:
         code = dedent(code)
+
+    code = code.replace(r'\[', '[').replace(r'\]', ']')
+    code = code.replace(r'\{', '{').replace(r'\}', '}')
+
     return codehl(lang, code)
 
 
@@ -344,24 +357,10 @@ def safe_eval(engine, node, body):
     return x
 
 @wrap_whitespace
-def safe_feval(engine, node, f, x, y):
+def safe_feval(engine, node, f, x):
     var = source_nows(f)
     f = engine.environment[var]
-    spec = inspect.getargspec(f)
-
-    if spec.varargs:
-        return f(engine, node, x, y)
-    if len(spec.args) == 2 and isinstance(x, ast.Void):
-        return f(engine, y)
-    elif len(spec.args) == 3:
-        if isinstance(x, ast.Void):
-            return f(engine, node, y)
-        elif isinstance(y, ast.Void):
-            return f(engine, node, x)
-        else:
-            raise Exception("Too many arguments for", f)
-    else:
-        return f(engine, node, x, y)
+    return f(engine, node, x)
 
 
 @wrap_whitespace
@@ -384,24 +383,10 @@ def eval(engine, node, body):
 
 
 @wrap_whitespace
-def feval(engine, node, f, x, y):
+def feval(engine, node, f, x):
     code = dedent(source(f))
     f = pyeval(code, engine.environment)
-    spec = inspect.getargspec(f)
-
-    if spec.varargs:
-        return f(engine, node, x, y)
-    if len(spec.args) == 2 and isinstance(x, ast.Void):
-        return f(engine, y)
-    elif len(spec.args) == 3:
-        if isinstance(x, ast.Void):
-            return f(engine, node, y)
-        elif isinstance(y, ast.Void):
-            return f(engine, node, x)
-        else:
-            raise Exception("Too many arguments for", f)
-    else:
-        return f(engine, node, x, y)
+    return f(engine, node, x)
 
 
 def css(engine, node, x):
