@@ -1,6 +1,8 @@
 
-import cgi
+import sys
 import re
+import traceback
+import cgi
 from . import ast
 from .parser import parse, all_op, rx_choice, whitespace_re
 from .operparse import Source
@@ -122,11 +124,36 @@ def match_pattern(pattern, value):
         return pattern(value)
 
 
+def default_error_handler(engine, ptree, exc):
+    raise
+
+def inline_error_handler(engine, ptree, exc):
+    def find(doc):
+        for i, (a, b, c) in enumerate(doc.data):
+            if c is tb:
+                return '<a class="err_link" href="#__ERR_{i}">E{i}</a>'.format(i = i + 1)
+        return ""
+    etype, e, tb = exc
+    text = source_nows(ptree)
+    return MultiGenerator(GeneratorFor('errors', ptree, e, tb),
+                          RawGenerator(ptree.whitespace_left),
+                          RawGenerator('<span class="error">'),
+                          TextGenerator(text),
+                          RawGenerator('</span>'),
+                          RawGenerator('<sup>'),
+                          GeneratorFrom('errors', find),
+                          RawGenerator('</sup>'),
+                          RawGenerator(ptree.whitespace_right))
+
+
 class Engine:
 
-    def __init__(self):
+    def __init__(self, error_handler = None):
         self.ctors = defaultdict(list)
         self.environment = {}
+        if error_handler is None:
+            error_handler = default_error_handler
+        self.error_handler = error_handler
 
     def match(self, ptree):
 
@@ -179,7 +206,10 @@ class Engine:
         if result is None:
             raise Exception("Could not find a rule for:", ptree)
         f, args = result
-        return f(self, ptree, **args)
+        try:
+            return f(self, ptree, **args)
+        except Exception:
+            return self.error_handler(self, ptree, sys.exc_info())
 
 
 
@@ -204,6 +234,15 @@ class SetDocument:
 
     def add(self, *entry):
         self.data.add(entry)
+
+
+class ListDocument:
+
+    def __init__(self):
+        self.data = []
+
+    def add(self, *entry):
+        self.data.append(entry)
 
 
 class RepoDocument:
@@ -510,6 +549,32 @@ class ListGenerator(PartsGenerator):
             return None
 
 
+class DefinitionsGenerator(PartsGenerator):
+
+    def __init__(self, *children):
+        self.children = children
+
+    def parts(self):
+        yield RawGenerator("<dl>")
+        for t, d in self.children:
+            yield RawGenerator("<dt>")
+            yield t
+            yield RawGenerator("</dt>")
+            yield RawGenerator("<dd>")
+            yield d
+            yield RawGenerator("</dd>")
+        yield RawGenerator("</dl>")
+
+    def merge(self, other):
+        if isinstance(other, DefinitionsGenerator):
+            return DefinitionsGenerator(*(self.children + other.children))
+        else:
+            return None
+
+
+
+
+
 class TableHeader:
     def __init__(self, *cells):
         self.cells = cells
@@ -556,6 +621,32 @@ class ParagraphGenerator(WrapGenerator):
         else:
             return None
 
+
+def whitespace_before(node):
+    if isinstance(node, str) and not hasattr(node, 'whitespace_before'):
+        return ""
+    else:
+        return node.whitespace_before
+
+def whitespace_after(node):
+    if isinstance(node, str) and not hasattr(node, 'whitespace_after'):
+        return ""
+    else:
+        return node.whitespace_after
+
+def source_nows(node):
+    if isinstance(node, str) and not hasattr(node, 'raw'):
+        return node
+    else:
+        return node.raw()
+
+def source(node):
+    if isinstance(node, str) and not hasattr(node, 'raw'):
+        return node
+    else:
+        return (node.whitespace_left
+                + node.raw()
+                + node.whitespace_right)
 
 def format_anchor(s):
     return s.lower().replace(' ', '-').replace('\n', '-').replace('~', '')
@@ -698,6 +789,7 @@ def generate_html_file(documents):
         <script>
           {script}
         </script>
+        {errtext}
       </body>
     </html>
     """)
@@ -707,11 +799,37 @@ def generate_html_file(documents):
         xlinks.append('<link rel={type} href="{link}">'.format(
                 type = type, link = link))
 
+    errors = documents['errors'].data
+    if errors:
+        errtext = ""
+        for i, (culprit, error, tb) in enumerate(errors):
+            errsource = source(culprit)
+            tb = traceback.format_tb(tb)
+            errtext += """
+              <div class="err_report" id="__ERR_{i}">
+                <div class="err_source">
+                  <span class="err_num">E{i}</span>
+                  <div>{errsource}</div>
+                  <div>{loc}</div>
+                </div>
+                <div class="err_exception">{error}</div>
+                <div class="err_traceback">{tb}</div>
+              </div>
+              """.format(errsource = cgi.escape(errsource),
+                         loc = cgi.escape(str(culprit.location)),
+                         error = cgi.escape(str(error)),
+                         tb = cgi.escape("".join(tb)),
+                         i = i + 1)
+        errtext = '<div class="err_reports">%s</div>' % errtext
+    else:
+        errtext = ""
+
     return template.format(style = documents['css'].data,
                            title = documents['meta'].get('title', 'Untitled'),
                            xlinks = "\n".join(xlinks),
                            script = documents['js'].data,
-                           contents = documents['main'].data)
+                           contents = documents['main'].data,
+                           errtext = errtext)
 
 
 def evaluate(x, engine, documents):

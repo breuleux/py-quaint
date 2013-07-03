@@ -4,6 +4,12 @@
   author: Olivier Breuleux
 
 
+Table of contents
+=================
+
+{toc}
+
+
 Section
 =======
 
@@ -50,6 +56,20 @@ Subsection
           end
       end
 
+
+>> Quoting without credit
+
+someone >> Quoting someone
+
+>>
+  Quoting a
+  whole paragraph
+  someone more interesting >> Quoting someone
+    more interesting
+
+Term :: Definition
+Other term ::
+  Other definition
 
 _ You can put emphasis on a whole line if there's whitespace after the
 operator.

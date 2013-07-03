@@ -2,7 +2,10 @@
 
 import inspect
 from . import ast, parser, engine as mod_engine
+from .parser import parse
 from .engine import (
+    source,
+    source_nows,
     format_anchor,
     dedent,
     collapse,
@@ -17,6 +20,7 @@ from .engine import (
     SectionGenerator as Section,
     ParagraphGenerator as Paragraph,
     AutoMergeGenerator as AutoMerge,
+    DefinitionsGenerator as Definitions,
     ListGenerator as List,
     TableGenerator as Table,
     TableHeader,
@@ -39,17 +43,6 @@ def wrap_whitespace(f):
                    Text(node.whitespace_right))
     f2.__name__ = f.__name__
     return f2
-
-def source_nows(node):
-    if isinstance(node, str) and not hasattr(node, 'raw'):
-        return node
-    else:
-        return node.raw()
-
-def source(node):
-    return (node.whitespace_left
-            + node.raw()
-            + node.whitespace_right)
 
 class FromArg:
     def __init__(self, argname, f = None):
@@ -104,6 +97,8 @@ def parts_wrapper(w0, *wrappers):
                     if arg not in kwargs:
                         continue
                     target = kwargs[arg]
+                    if isinstance(target, ast.Void):
+                        continue
                 if arg.endswith('?!'):
                     target = kwargs.get(arg[:-2], ast.Void())
                 else:
@@ -334,11 +329,43 @@ def ulist(engine, node, item):
 def olist(engine, node, item):
     return List(engine(item), ordered = True)
 
+def dlist(engine, node, term, definition):
+    return Definitions((engine(term), engine(definition)))
+
 
 @wrap_whitespace
-def eval(engine, node, env = None, body = None):
-    if body is None:
-        body = env
+def safe_eval(engine, node, body):
+    var = source_nows(body)
+    x = engine.environment[var]
+    if isinstance(x, (ast.ASTNode, ast.quaintstr)):
+        x = engine(x)
+    elif not isinstance(x, Generator):
+        x = Text(str(x))
+    return x
+
+@wrap_whitespace
+def safe_feval(engine, node, f, x, y):
+    var = source_nows(f)
+    f = engine.environment[var]
+    spec = inspect.getargspec(f)
+
+    if spec.varargs:
+        return f(engine, node, x, y)
+    if len(spec.args) == 2 and isinstance(x, ast.Void):
+        return f(engine, y)
+    elif len(spec.args) == 3:
+        if isinstance(x, ast.Void):
+            return f(engine, node, y)
+        elif isinstance(y, ast.Void):
+            return f(engine, node, x)
+        else:
+            raise Exception("Too many arguments for", f)
+    else:
+        return f(engine, node, x, y)
+
+
+@wrap_whitespace
+def eval(engine, node, body):
 
     code = dedent(source(body))
 
@@ -488,5 +515,8 @@ def show_args(engine, node, **params):
                Gen(*args),
                Raw("</table>"))
 
+
+def include(engine, node, file):
+    return engine(parse(open(source_nows(file)).read()))
 
 

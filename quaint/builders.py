@@ -70,6 +70,7 @@ def default_bindings(engine):
         # Lists
         ('wide [* item]', 'ulist'),
         ('wide [# item]', 'olist'),
+        ('wide [term :: definition]', 'dlist'),
 
         # Tables
         ('wide [+ row]', 'table_header'),
@@ -103,9 +104,40 @@ def default_environment():
     return env
 
 
-def default_engine():
-    engine = mod_engine.Engine()
+def default_engine(error_handler = mod_engine.inline_error_handler):
+    engine = mod_engine.Engine(error_handler)
     engine.environment = default_environment()
+    default_bindings(engine)
+    engine.environment['engine'] = engine
+    return engine
+
+
+
+def safe_environment():
+    safe = """raw text op
+paragraph blocks indent
+bracket parens
+em strong
+link special_link anchor
+code code_block
+header1 header2 header3 header4 header5 header6
+ulist olist dlist
+table_header table_row
+quote ignore setvar load_in_var
+toc
+meta html css json yaml show_args include
+""".split()
+
+    env = {}
+    for k in safe:
+        env[k] = getattr(lib, k)
+    env['eval'] = lib.safe_eval
+    env['feval'] = lib.safe_feval
+    return env
+
+def safe_engine(error_handler = mod_engine.inline_error_handler):
+    engine = mod_engine.Engine(error_handler)
+    engine.environment = safe_environment()
     default_bindings(engine)
     engine.environment['engine'] = engine
     return engine
@@ -121,6 +153,7 @@ def html_documents():
         'xlinks': mod_engine.SetDocument(),
         'sections': mod_engine.SectionsDocument(),
         'meta': mod_engine.RepoDocument(),
+        'errors': mod_engine.ListDocument(),
         }
 
     return documents

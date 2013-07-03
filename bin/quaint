@@ -3,7 +3,8 @@
 """Quaint markup
 
 Usage:
-  quaint (tok|ast|eval|html) [FILE | -s STR]
+  quaint (tok|ast) [FILE | -s STR]
+  quaint (eval|html) [FILE | -s STR] [--safe]
 
 Arguments:
   FILE          Source file.
@@ -11,6 +12,7 @@ Arguments:
 Options:
   -h --help     Show this screen.
   -s STR        Use the provided string instead of a file.
+  --safe        Do not allow arbitrary code execution in markup.
 """
 
 from docopt import docopt
@@ -23,7 +25,7 @@ from quaint import engine
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
 from quaint.engine import evaluate
-from quaint.builders import default_engine, html_documents
+from quaint.builders import default_engine, safe_engine, html_documents
 
 from ug.format import errors
 from quaint.displayrules import ugdescr, rules
@@ -65,11 +67,11 @@ def get_source(args):
 def needs_source(f):
     def newf(args):
         s, path = get_source(args)
-        return f(s, path)
+        return f(s, path, args)
     return newf
 
 @needs_source
-def x_tok(s, path):
+def x_tok(s, path, args):
     # print(timeit(lambda: tokenize(Source(s, url = path)), number = 100))
     results = tokenize(Source(s, url = path))
     rules = RB()
@@ -83,38 +85,42 @@ def x_tok(s, path):
     pr(Table(things))
 
 @needs_source
-def x_ast(s, path):
+def x_ast(s, path, args):
     # print(timeit(lambda: parse(Source(s, url = path)), number = 100))
     result = parse(Source(s, url = path))
     pr = boxy_terminus()
     pr((result), rules = rules, descr = ugdescr)
 
 @needs_source
-def x_eval(s, path):
+def x_eval(s, path, args):
     ast = parse(Source(s, url = path))
     documents = html_documents()
-    evaluate(ast, default_engine(), documents)
+
+    if not args['--safe'] and (not path or path.endswith('.py.q')):
+        eng = default_engine(engine.default_error_handler)
+    else:
+        eng = safe_engine(engine.default_error_handler)
+
+    evaluate(ast, eng, documents)
     print("\x1B[?0;7y:h <div>" + documents['main'].data + "</div>\a")
 
 @needs_source
-def x_html(s, path):
-    # print("ast", timeit(lambda: parse(Source(s, url = path)), number = 1) * 1000)
+def x_html(s, path, args):
     ast = parse(Source(s, url = path))
-    # print("eval", timeit(lambda: evaluate(ast), number = 1) * 1000)
-
-    # main = HTMLDocument()
-    # documents = {'main': main,
-    #              'sections': SectionsDocument()}
 
     documents = html_documents()
     documents['xlinks'].add('stylesheet', 'style/main.css')
     documents['xlinks'].add('stylesheet', 'style/pygments.css')
-    evaluate(ast, default_engine(), documents)
+
+    if not args['--safe'] and (not path or path.endswith('.py.q')):
+        eng = default_engine()
+    else:
+        eng = safe_engine()
+
+    evaluate(ast, eng, documents)
 
     html = engine.generate_html_file(documents)
     print(html)
-
-    # print("\x1B[?0;7y:h <div>" + documents['main'].data + "</div>\a")
 
 
 if __name__ == '__main__':

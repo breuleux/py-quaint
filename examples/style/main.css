@@ -90,3 +90,86 @@ table th, table td {
     padding-right: 5px;
     border-right: 1px solid black;
 }
+
+
+div.quote {
+    margin-top: 10px;
+}
+
+div.source {
+    color: #888;
+    border-bottom: 2px solid #888;
+    margin-left: 25px;
+}
+
+blockquote {
+    border-left: 4px solid blue;
+    margin-top: 0px;
+    margin-left: 25px;
+    padding-left: 5px;
+}
+
+blockquote div.source {
+    margin-left: 5px;
+}
+
+blockquote blockquote {
+    margin-left: 5px;
+}
+
+
+dt {
+    font-weight: bold;
+}
+
+
+
+.error {
+    border-bottom: 2px solid red;
+}
+
+.err_link {
+    font-weight: bold;
+    color: red;
+}
+
+.err_reports {
+    width: 800px;
+    margin: auto;
+    margin-top: 30px;
+    padding: 20px;
+    background-color: white;
+}
+
+.err_report {
+    padding: 20px;
+    background-color: faa;
+}
+
+.err_num {
+    font-weight: bold;
+    color: red;
+}
+
+.err_source {
+    background-color: white;
+    border-bottom: 3px solid black;
+}
+
+.err_source div {
+    display: inline-block;
+    white-space: pre;
+}
+
+.err_exception {
+    background-color: white;
+    white-space: pre;
+    padding: 5px;
+    font-weight: bold;
+}
+
+.err_traceback {
+    background-color: white;
+    white-space: pre;
+    padding: 5px;
+}
