@@ -153,7 +153,8 @@ def op(engine, node):
     for token, op in zip(node.args[1:], oper):
         args.append(engine(op))
         args.append(engine(token))
-    return Gen(Raw("<span>"), Gen(*args), Raw("</span>"))
+    # return Gen(Raw("<span>"), Gen(*args), Raw("</span>"))
+    return Gen(*args)
 
 
 
@@ -205,7 +206,7 @@ quote = parts_wrapper(('source', 'quote'),
 
 
 def plain_or_code(engine, node):
-    if is_curly_bracket(node):
+    if ast.is_curly_bracket(node):
         return str(pyeval(node.args[1].raw(), engine.environment))
     else:
         return node.raw()

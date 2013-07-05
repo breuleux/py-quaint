@@ -49,7 +49,6 @@ def default_bindings(engine):
         # Emphasis
         ('_ expr', 'em'),
         ('__ expr', 'strong'),
-        ('<expr>', 'em'),
 
         # Links
         ('text @ maybe link', 'link'),

@@ -381,15 +381,15 @@ def make_operators(tokenizer):
             if token.fixity == 'prefix':
                 wide = widths[1]
                 lp = p_immediate
-                if '<' in token.text:
-                    priority = 90
-                    wide = True
+                # if '<' in token.text:
+                #     priority = 90
+                #     wide = True
             elif token.fixity == 'suffix':
                 wide = widths[0]
                 rp = p_immediate
-                if '>' in token.text:
-                    priority = 90
-                    wide = True
+                # if '>' in token.text:
+                #     priority = 90
+                #     wide = True
                 if token.text == '.' and not wide:
                     priority = 99
             else:
@@ -402,8 +402,8 @@ def make_operators(tokenizer):
 
             if not token.text:
                 aggr = [token.text]
-            elif '<' in token.text:
-                aggr = lambda other: ('>' in other)
+            # elif '<' in token.text:
+            #     aggr = lambda other: ('>' in other)
             else:
                 aggr = None
 
