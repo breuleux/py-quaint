@@ -167,9 +167,21 @@ dd {
 
 .err_exception {
     background-color: white;
-    white-space: pre;
     padding: 5px;
     font-weight: bold;
+}
+
+.err_exception div {
+    display: inline;
+    white-space: pre;
+}
+
+.err_type {
+    color: red;
+}
+
+.err_type:after {
+    content: ":";
 }
 
 .err_traceback {

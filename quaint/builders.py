@@ -57,6 +57,10 @@ def default_bindings(engine):
         ('maybe text @ type ! maybe link', 'special_link'),
         ('maybe text @# label', 'anchor'),
 
+        ('text :: maybe link', 'link'),
+        ('maybe text :: type : maybe link', 'special_link'),
+        ('maybe text :# label', 'anchor'),
+
         # Code
         ('maybe lang ` code', 'code'),
         ('maybe lang % code', 'code_block'),
@@ -74,7 +78,7 @@ def default_bindings(engine):
         # Lists
         ('wide [* item]', 'ulist'),
         ('wide [# item]', 'olist'),
-        ('wide [term :: definition]', 'dlist'),
+        ('wide [term := definition]', 'dlist'),
 
         # Tables
         ('wide [+ row]', 'table_header'),

@@ -130,13 +130,13 @@ def default_error_handler(engine, ptree, exc):
 
 def inline_error_handler(engine, ptree, exc):
     def find(doc):
-        for i, (a, b, c) in enumerate(doc.data):
-            if c is tb:
+        for i, (a, b, c, d) in enumerate(doc.data):
+            if d is tb:
                 return '<a class="err_link" href="#__ERR_{i}">E{i}</a>'.format(i = i + 1)
         return ""
     etype, e, tb = exc
     text = source_nows(ptree)
-    return MultiGenerator(GeneratorFor('errors', ptree, e, tb),
+    return MultiGenerator(GeneratorFor('errors', ptree, etype, e, tb),
                           RawGenerator(ptree.whitespace_left),
                           RawGenerator('<span class="error">'),
                           TextGenerator(text),
@@ -425,7 +425,7 @@ class HTMLDocumentGenerator(Generator):
     def generate_main(self, docs):
         unmangled_docs = {k[5:]: v
                           for k, v in docs.items() if k.startswith('_sub_')}
-        return generate_html_document(unmangled_docs)
+        return generate_html_file(unmangled_docs)
 
 
 
@@ -885,7 +885,7 @@ def generate_html_file(documents):
     errors = documents['errors'].data
     if errors:
         errtext = ""
-        for i, (culprit, error, tb) in enumerate(errors):
+        for i, (culprit, etype, error, tb) in enumerate(errors):
             errsource = source(culprit)
             tb = traceback.format_tb(tb)
             errtext += """
@@ -895,12 +895,16 @@ def generate_html_file(documents):
                   <div>{errsource}</div>
                   <div>{loc}</div>
                 </div>
-                <div class="err_exception">{error}</div>
+                <div class="err_exception">
+                  <div class="err_type">{etype}</div>
+                  <div class="err_contents">{error}</div>
+                </div>
                 <div class="err_traceback">{tb}</div>
               </div>
               """.format(errsource = cgi.escape(errsource),
                          loc = cgi.escape(str(culprit.location)),
                          error = cgi.escape(str(error)),
+                         etype = cgi.escape(etype.__name__),
                          tb = cgi.escape("".join(tb)),
                          i = i + 1)
         errtext = '<div class="err_reports">%s</div>' % errtext

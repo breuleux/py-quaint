@@ -19,8 +19,8 @@ My name is {meta}:author.
 * __[strong emphasis]
   * emphasis on syl[_la]ble
 * `verbatim
-* link@http://breuleux.net
-  * [link to section]@subsection
+* link::http://breuleux.net
+  * [link to section]::subsection
 
 You will need [square brackets] around the argument if it is more than
 one word. Operator characters like \[, \] or \_ can be escaped with
@@ -67,8 +67,8 @@ someone >> Quoting someone
   someone more interesting >> Quoting someone
     more interesting
 
-Term :: Definition
-Other term ::
+Term := Definition
+Other term :=
   Other definition
 
 _ You can put emphasis on a whole line if there's whitespace after the

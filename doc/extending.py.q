@@ -4,15 +4,15 @@ Extending Quaint
 
 Quaint processes a document in four phases:
 
-Parsing ::
+Parsing :=
   Quaint creates a parse tree. This phase __[cannot be customized].
 
-Generator building ::
+Generator building :=
   An _engine associates each node in the parse tree to a function that
   takes the engine and the node and returns a _generator. A generator
   is an object which can contribute to one or several documents.
 
-Document generation ::
+Document generation :=
 
   * Several _documents are created (main, css, js, sections, xlinks,
     links, errors, etc.).
@@ -21,7 +21,7 @@ Document generation ::
     in order to append a citation to the _main document.
   * For each document, each generator may contribute to the document.
 
-Assembly ::
+Assembly :=
   All documents are _assembled into the output file.
 
 The __engine can be customized to add new operators. It is also
@@ -51,12 +51,12 @@ is -- tedious, blundering attempts to define its syntax coherently.
 
 Let's go over the arguments of the function:
 
-  `engine ::
+  `engine :=
     The handler is given the engine so that it may apply it to its
     other arguments. In `swap, we apply it to `right and `left so that
     further rules may apply to them.
 
-  `node ::
+  `node :=
     The node the engine was applied to and matched the pattern.
     Normally, this will be an operator node. If so:
 
@@ -71,11 +71,11 @@ Let's go over the arguments of the function:
     * `node.whitespace_right: the string of whitespace right of the
       application
 
-  `left ::
+  `left :=
     This is a part of the node extracted by the pattern.
     In `swap this is the same as `node.args[0].
 
-  `right ::
+  `right :=
     This is a part of the node extracted by the pattern.
     In `swap this is the same as `node.args[1].
 
@@ -89,31 +89,31 @@ most simple functionality easily.
 
 ==== Basic generators
 
-`Raw(x) ::
+`Raw(x) :=
   Generates the string `x _unescaped. If `x contains HTML tags and the
   like, they will be passed along.
 
-`Text(x) ::
+`Text(x) :=
   Escapes the string `x using `cgi.escape.
 
-`Gen(x, y, ...) ::
+`Gen(x, y, ...) :=
   Generates each of its arguments.
 
-`x when `x is not an instance of `Generator ::
+`x when `x is not an instance of `Generator :=
   Same as `Text(str(string))
 
 ==== Other generators
 
-`List(x, y, ..., [ordered = False]) ::
+`List(x, y, ..., [ordered = False]) :=
   Generate a bullet list of `x, `y, etc. `ordered is a keyword
   argument. If False, the list will be unordered (`[<ul>]),
   else it will be ordered (`[<ol>]).
 
-`Definitions((term1, def1), ...) ::
+`Definitions((term1, def1), ...) :=
   Generate a definition list (term1 with definition def1, etc.)
   using `[<dl>], `[<dt>], `[<dd>].
 
-`Table(row1, row2, ...) ::
+`Table(row1, row2, ...) :=
   Generate a table with the given rows. Each row is either a list or
   tuple of generators (one for each column) or an instance of
   `TableHeader (which generates table headers).
@@ -136,13 +136,13 @@ course this necessitates that the sections document be generated
 first. So we do a first pass on all generators, asking for sections,
 then we do a second pass, asking for main.
 
-`GenFor(doc, x, ...) ::
+`GenFor(doc, x, ...) :=
   Generates `x and the arguments that follow in the document `doc.
   Semantics depend on the semantics of the document. For instance, the
   _css document requires a CSS string, whereas the _meta document
   requires a key and a value.
 
-`GenFrom(doc, f) ::
+`GenFrom(doc, f) :=
   First, forces the document called `doc to be generated before the
   main document. Then, `f will be passed document `doc. It must return
   a string to append to the main document. For instance, a
