@@ -1,5 +1,6 @@
 
 import cgi
+import urllib.request
 import inspect
 from . import ast, parser, engine as mod_engine
 from .parser import parse
@@ -28,12 +29,12 @@ from .engine import (
 )
 pyeval = eval
 
+import csv
+import json as pyjson
 try:
     import yaml as pyyaml
 except ImportError:
     pyyaml = None
-
-import json as pyjson
 
 
 def wrap_whitespace(f):
@@ -145,8 +146,12 @@ def raw(engine, node):
 @wrap_whitespace
 def op(engine, node):
     args = [engine(node.args[0])]
-    for token in node.args[1:]:
-        args.append(engine(node.operator))
+    if isinstance(node.operator, str):
+        oper = [node.operator] * (len(node.args) - 1)
+    else:
+        oper = node.operator
+    for token, op in zip(node.args[1:], oper):
+        args.append(engine(op))
         args.append(engine(token))
     return Gen(Raw("<span>"), Gen(*args), Raw("</span>"))
 
@@ -200,7 +205,7 @@ quote = parts_wrapper(('source', 'quote'),
 
 
 def plain_or_code(engine, node):
-    if isinstance(node, ast.InlineOp) and node.operator == '{}':
+    if is_curly_bracket(node):
         return str(pyeval(node.args[1].raw(), engine.environment))
     else:
         return node.raw()
@@ -264,9 +269,10 @@ def anchor(engine, node, text, label):
 
 
 
-def extract_and_codehl(lang, code, do_dedent = True):
+def extract_and_codehl(lang, code, do_dedent = True, unescape_brackets = False):
 
-    if isinstance(code, ast.InlineOp) and code.operator == '[]':
+    # if isinstance(code, ast.InlineOp) and code.operator == ('[', ']'):
+    if ast.is_square_bracket(code):
         wsl, code, wsr = code.args
 
     if isinstance(lang, ast.Void):
@@ -278,8 +284,9 @@ def extract_and_codehl(lang, code, do_dedent = True):
     if do_dedent:
         code = dedent(code)
 
-    code = code.replace(r'\[', '[').replace(r'\]', ']')
-    code = code.replace(r'\{', '{').replace(r'\}', '}')
+    if unescape_brackets:
+        code = code.replace(r'\[', '[').replace(r'\]', ']')
+        code = code.replace(r'\{', '{').replace(r'\}', '}')
 
     return codehl(lang, code)
 
@@ -291,7 +298,7 @@ def ignore(engine, node, x):
 @wrap_whitespace
 def code(engine, node, lang, code):
     # inline code snippets
-    code = extract_and_codehl(lang, code, False)
+    code = extract_and_codehl(lang, code, False, True)
     return Gen(Raw('<span class="code code_inline"><code>'),
                # Note: pygments' HTMLFormatter puts a line break at
                # the end of the generated code. That line break
@@ -303,7 +310,7 @@ def code(engine, node, lang, code):
 def code_block(engine, node, lang, code):
     # blocks of code
     return Gen(Raw('<div class="code code_block"><pre>'),
-               Raw(extract_and_codehl(lang, code, True)),
+               Raw(extract_and_codehl(lang, code, True, False)),
                Raw('</pre></div>'))
 
 def header_n(n):
@@ -393,7 +400,7 @@ def css(engine, node, x):
     return GenFor('css', x.raw())
 
 def html(engine, node, code):
-    if isinstance(code, ast.Op) and code.operator == '[]':
+    if ast.is_square_bracket(code):
         code = code.args[1]
     return Raw(code.raw())
 
@@ -411,17 +418,30 @@ def load_type(type):
         return f
     return wrap
 
+def urlload(url):
+    if isinstance(url, ast.InlineOp) and url.operator in ['://', ':']:
+        file = source_nows(url)
+    else:
+        file = 'file:' + source_nows(url)
+    return urllib.request.urlopen(file).read().decode('utf-8')
+
 @load_type('yaml')
 def load_yaml(engine, node, file):
     if not pyyaml:
         raise ImportError("yaml is not installed!")
-    results = pyyaml.safe_load(open(source(file)).read())
+    results = pyyaml.safe_load(urlload(file))
     return results
 
 @load_type('json')
 def load_json(engine, node, file):
-    results = pyjson.load(source(file))
+    results = pyjson.loads(urlload(file))
     return results
+
+@load_type('csv')
+def load_csv(engine, node, file):
+    results = list(csv.reader(urlload(file).split('\n'), skipinitialspace = True))
+    return results
+
 
 def load_in_var(engine, node, name, type, file):
     if isinstance(type, ast.Void):
@@ -431,22 +451,23 @@ def load_in_var(engine, node, name, type, file):
     return Raw("")
 
 
+def import_data(engine, data):
+    if not isinstance(data, dict):
+        raise Exception("the data should be a dictionary")
+    for k, v in data.items():
+        engine.environment[k] = v
+
+
 def yaml(engine, node, expr):
     if not pyyaml:
         raise ImportError("yaml is not installed!")
     results = pyyaml.safe_load(source(expr))
-    if not isinstance(results, dict):
-        raise Exception("the yaml should define a dictionary")
-    for k, v in results.items():
-        engine.environment[k] = v
+    import_data(engine, results)
     return Raw("")
 
 def json(engine, node, expr):
     results = pyjson.loads(source(expr))
-    if not isinstance(results, dict):
-        raise Exception("the json should define a dictionary")
-    for k, v in results.items():
-        engine.environment[k] = v
+    import_data(engine, results)
     return Raw("")
 
 
@@ -455,7 +476,7 @@ def grabdefs(engine, x):
     if isinstance(x, ast.Op):
         if x.operator == ':':
             key, value = x.args
-            if isinstance(value, ast.Op) and value.operator == '{}':
+            if ast.is_curly_bracket(value):
                 value = pyeval(value.args[1].raw(), engine.environment)
             else:
                 value = value.raw()
@@ -463,7 +484,7 @@ def grabdefs(engine, x):
             return GenFor('meta', key.raw().lower(), value)
         elif x.operator in ('P', 'B', 'I'):
             return Gen(*[grabdefs(engine, arg) for arg in x.args])
-        elif x.operator == '[]':
+        elif is_square_bracket(x):
             return grabdefs(engine, x.args[1])
         else:
             raise Exception("?!?")

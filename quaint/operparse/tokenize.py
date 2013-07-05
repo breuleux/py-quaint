@@ -325,7 +325,7 @@ class Alternator(TokenizerWrapper):
             yield current
             last = current
 
-        if last and last.type == 'operator':
+        if last and (last is self.token0 or last.type == 'operator'):
             yield self.sandwich_void(last, None)
 
 

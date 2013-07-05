@@ -111,3 +111,25 @@ class Nullary(ASTNode):
         self.text = text
         super().__init__(location = location)
 
+
+def is_void(node):
+    return isinstance(node, Void)
+
+def is_oper(node, op = None):
+    if isinstance(node, Op):
+        if op is None:
+            return True
+        else:
+            return node.operator == op
+    else:
+        return False
+
+def is_round_bracket(node):
+    return is_oper(node, ('(', ')'))
+
+def is_square_bracket(node):
+    return is_oper(node, ('[', ']'))
+
+def is_curly_bracket(node):
+    return is_oper(node, ('{', '}'))
+

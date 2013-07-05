@@ -14,6 +14,7 @@ For instance, `[+] is an operator, `[++] is an operator, `[/_%%] is an
 operator, and so on. You can _escape an operator character or a
 bracket with \\ (e.g. `[\%]).
 
+
 {
   red = wrapper(style = "color: red; font-weight: bold")
   blue = wrapper(style = "color: blue; font-weight: bold")
@@ -21,10 +22,9 @@ bracket with \\ (e.g. `[\%]).
 
 Almost all operators behave the same. Consider the `[/] operator, for
 instance. The `[/] operator take two arguments (left hand side and
-right hand side). In the following example, in [<red> red], I
-highlight the [<red> left hand side], and in [<blue> blue], I
-highlight the [<blue> right hand side]. Sometimes, one of them will be
-_void:
+right hand side). In the following example, in {red}:red, I highlight
+the {red}:[left hand side], and in {blue}:blue, I highlight the
+{blue}:[right hand side]. Sometimes, one of them will be _void:
 
 {
   # Did you think I was highlighting by hand? :)
@@ -40,7 +40,7 @@ _void:
   engine['## expr'] = pre
 }
 
-<css>
+{css}:
   .lhs {color: red; font-weight: bold; white-space: pre}
   .rhs {color: blue; font-weight: bold; white-space: pre}
   .oper {color: black; font-weight: bold}
@@ -142,7 +142,7 @@ they obey the same rules as normal operators. Let's highlight the
   engine['maybe lhs /// maybe rhs'] = hl2
 }
 
-<css>
+{css}:
   blockquote {font-family: monospace}
 
 >>

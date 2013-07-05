@@ -47,10 +47,10 @@ As an exercise, try importing functions from a package and formatting
 their documentation!
 
 
-`[<>] Operators
----------------
+Operators
+---------
 
-The `[<f> x] syntax applies the function defined by the expression `f
+The `[{f}: x] syntax applies the function defined by the expression `f
 to the argument `x. To give a simple example:
 
 {
@@ -58,20 +58,30 @@ to the argument `x. To give a simple example:
       return Gen(Raw("<sup>"), engine(x), Raw("</sup>"))
 }
 
-I can now write <sup>superscript.
+I can now write {sup}:superscript.
 
 A useful operator is `wrapper(...), which lets you wrap expressions
-using arbitrary tags and classes. Exponents, <wrapper("sup")>[for
-instance]. Or <wrapper("a", href = "http://breuleux.net")> a link.
+using arbitrary tags and classes. Exponents, {wrapper("sup")}:[for
+instance]. Or [{wrapper("a", href = "http://breuleux.net")}: a link].
 
-<wrapper("pre", classes = "some_class")>
+{wrapper("pre", classes = "some_class")}:
   Or a whole indented block.
 
-Unless you define an indented block, try to keep the whole `[<>]
-expression on a single line. If it still acts up, that might be
-operator priority acting up, so try wrapping the argument and/or the
-whole application in `[[]]~s.
+The syntax only triggers if the left hand side of `[:] is a curly
+bracket expression. What follows:
 
+%
+  word {sup}: arg1 arg2
+  word [{sup}: arg1 arg2]
+  word {sup}:arg notarg
+  word {sup}:[arg1 arg2]
 
+Produces what follows (notice whitespace patterns):
+
+{wrapper("pre")}:
+  word {sup}: arg1 arg2
+  word [{sup}: arg1 arg2]
+  word {sup}:arg notarg
+  word {sup}:[arg1 arg2]
 
 

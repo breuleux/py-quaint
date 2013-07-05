@@ -42,14 +42,14 @@ def default_bindings(engine):
         (("I", "i"), 'indent'),
 
         # Brackets
-        (('[]', [ast.Void, 'body', ast.Void]), 'bracket'),
-        ("(body)", 'parens'),
+        (((('[', ']'), None, None), [ast.Void, 'body', ast.Void]), 'bracket'),
         ("{body}", 'eval'),
-        ("<f> x", 'feval'),
+        ("{f}: x", 'feval'),
 
         # Emphasis
         ('_ expr', 'em'),
         ('__ expr', 'strong'),
+        ('<expr>', 'em'),
 
         # Links
         ('text @ maybe link', 'link'),
@@ -83,7 +83,7 @@ def default_bindings(engine):
         ('wide [maybe source >> quote]', 'quote'),
         (';; x', 'ignore'),
         ('name <- body', 'setvar'),
-        ('name <= maybe type : file', 'load_in_var'),
+        ('name <= maybe type :: file', 'load_in_var'),
 
         ]
 

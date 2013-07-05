@@ -1,5 +1,5 @@
 
-<meta>
+{meta}:
   title: Features
   author: Olivier Breuleux
 
@@ -13,7 +13,7 @@ Table of contents
 Section
 =======
 
-My name is [<meta> author].
+My name is {meta}:author.
 
 * _Emphasis
 * __[strong emphasis]
@@ -79,11 +79,8 @@ __
   paragraph is in bold.
 
 
-Use `[[<html> [...]]] to insert literal HTML: [<html> [<b>hello</b>]].
-<html>
+Use `[[{html}: [...]]] to insert literal HTML: [{html}: [<b>hello</b>]].
+{html}:
   <div>
-    <code>&lt;html&gt;</code> followed by an <b>indented block</b> also works.
+    <code>{html}:</code> followed by an <b>indented block</b> also works.
   </div>
-
-In Quaint, outside of html mode, `[<...>] does not define a tag. It
-defines an operator, so there is no need for `[</html>].

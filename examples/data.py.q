@@ -14,15 +14,16 @@ In order to load data in YAML format from the file `data.yaml and put
 it in the variable `data, either of these statements will work:
 
 %
-  data <= yaml:data.yaml
-  data <= :data.yaml
+  data <= yaml::data.yaml
+  data <= ::data.yaml
   {data = pyyaml.safe_load(open("data.yaml").read())}
 
-The first two methods translate to other formats, such as JSON, in a
-straightforward manner. The third method depends on the library used
-to parse the data, but it's good to keep in mind that you shouldn't
-feel limited by the syntactical options Quaint offers as a
-convenience. You can use straight Python if need be.
+The file name can also be a URL.
+
+The third method depends on the library used to parse the data, but
+it's good to keep in mind that you shouldn't feel limited by the
+syntactical options Quaint offers as a convenience. You can use
+straight Python if need be.
 
 Once the data is loaded, you can format it:
 
@@ -35,7 +36,7 @@ python %
 
 In action:
 
-data <= :data.yaml
+data <= ::data.yaml
 {
   Table(TableHeader("Rank", "Title", "Gross", "Year"),
         *[[i + 1, entry["Title"], entry["Gross"], entry["Year"]]
@@ -49,13 +50,13 @@ Embedding data
 In some situations it can be practical to put the data directly in the
 document.
 
-The `[<yaml>] and `[<json>] directives let you embed YAML/JSON data as
-an indented block below the directive. The caveat is this: each
+The `[{yaml}:] and `[{json}:] directives let you embed YAML/JSON data
+as an indented block below the directive. The caveat is this: each
 top-level key/value pair sets the variable named by the key to the
 value. For instance, the following:
 
 %
-  <json>
+  {json}:
     {
       "grades": [
         {"Name": "Jason", "Grade": 94},
@@ -77,7 +78,7 @@ python %
 
 Result:
 
-<json>
+{json}:
   {
     "grades": [
       {"Name": "Jason", "Grade": 94},

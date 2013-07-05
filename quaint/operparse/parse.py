@@ -142,7 +142,10 @@ def operator_parse(tokenizer, order, finalize):
                     right = right_op)
 
     id1 = next(tokenizer)
-    op1 = next(tokenizer)
+    try:
+        op1 = next(tokenizer)
+    except StopIteration:
+        return finalize(id1)
 
     results = lambda: helper(None, id1, op1, lambda right: [None, right, None])
     while callable(results):

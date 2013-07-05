@@ -41,7 +41,7 @@ def create_pattern(ptree, properties):
 
     elif isinstance(ptree, ast.Op):
 
-        if ptree.operator == '[]':
+        if ast.is_square_bracket(ptree):
             return create_pattern(ptree.args[1], properties)
 
         elif ptree.operator:
@@ -155,6 +155,15 @@ class MetaNode:
         return self.process(engine, *self.args)
 
 
+def firstchar(ptree):
+    if isinstance(ptree, ast.Op):
+        oper = ptree.operator
+        if isinstance(oper, (list, tuple)):
+            oper = oper[0]
+        return oper and oper[0]
+    return None
+
+
 class Engine:
 
     def __init__(self, error_handler = None):
@@ -166,10 +175,12 @@ class Engine:
 
     def match(self, ptree):
 
-        if isinstance(ptree, ast.Op):
-            candidates = self.ctors.get(ptree.operator and ptree.operator[0], [])
-        else:
-            candidates = []
+        # if isinstance(ptree, ast.Op):
+        #     candidates = self.ctors.get(ptree.operator and ptree.operator[0], [])
+        # else:
+        #     candidates = []
+
+        candidates = self.ctors.get(firstchar(ptree), [])
 
         for c in ptree.__class__.__mro__:
             candidates += self.ctors.get(c, [])
@@ -192,6 +203,9 @@ class Engine:
             if isinstance(pattern, tuple):
                 head = pattern[0]
                 if isinstance(head, tuple):
+                    head = head[0]
+                if isinstance(head, tuple):
+                    # yes, it needs to be done twice
                     head = head[0]
                 if isinstance(head, str):
                     first_character = head and head[0]

@@ -259,11 +259,21 @@ def inherent_fixity(tok):
 
     # if tok.text == '<' and wsl is not None:
     #     return "infix"
-    if tok.text == '<':
-        return "prefix"
-    elif tok.text == '>' and wsr is not None:
-        return "infix"
-    elif (tok.text == ':'
+
+    # if tok.text == '<':
+    #     return "prefix"
+    # elif tok.text == '>' and wsr is not None:
+    #     return "infix"
+    # elif (tok.text == ':'
+    #       and wsl == 0 and wsr is not None):
+    #     return "infix"
+
+    # if '<' in tok.text and '>' not in tok.text:
+    #     return "prefix"
+    # elif '>' in tok.text:
+    #     return "suffix"
+
+    if (tok.text == ':'
           and wsl == 0 and wsr is not None):
         return "infix"
 
@@ -330,18 +340,18 @@ def make_operators(tokenizer):
         ')I': (0, 'l', ['[']),
         ']': (1, 'l', ['[']),
         '}': (1, 'l', ['{']),
-        '>': (90, 'l', ['<']),
         ')': (91, 'l', ['(']),
         ',': (100, 'l', None),
+        # '>': (90, 'l', ['<']),
         }
     
     right_priorities = {
         'I(': (0, 'l', [')I']),
         '[': (1, 'l', [']']),
         '{': (1, 'l', ['}']),
-        '<': (90, 'l', ['>']),
         '(': (91, 'l', [')']),
         ',': (100, 'l', None),
+        # '<': (90, 'l', ['>']),
         }
 
     for token in tokenizer:
@@ -371,9 +381,15 @@ def make_operators(tokenizer):
             if token.fixity == 'prefix':
                 wide = widths[1]
                 lp = p_immediate
+                if '<' in token.text:
+                    priority = 90
+                    wide = True
             elif token.fixity == 'suffix':
                 wide = widths[0]
                 rp = p_immediate
+                if '>' in token.text:
+                    priority = 90
+                    wide = True
                 if token.text == '.' and not wide:
                     priority = 99
             else:
@@ -386,6 +402,8 @@ def make_operators(tokenizer):
 
             if not token.text:
                 aggr = [token.text]
+            elif '<' in token.text:
+                aggr = lambda other: ('>' in other)
             else:
                 aggr = None
 
@@ -431,19 +449,24 @@ def finalize(x):
         # op_text_and_ws = [op.args[0].location.get() for op in ops]
         args = list(map(finalize, args))
 
-        if op_text == ['[', ']']:
-            r = ast.InlineOp('[]', *args, wide = wide)
+        # if op_text == ['[', ']']:
+        #     r = ast.InlineOp(tuple(op_text), *args, wide = wide)
 
-        elif op_text == ['{', '}']:
-            r = ast.InlineOp('{}', *args, wide = wide)
+        # elif op_text == ['{', '}']:
+        #     r = ast.InlineOp(tuple(op_text), *args, wide = wide)
 
-        elif op_text == ['(', ')']:
-            r = ast.InlineOp('()', *args, wide = wide)
+        # elif op_text == ['(', ')']:
+        #     r = ast.InlineOp(tuple(op_text), *args, wide = wide)
 
-        elif op_text == ['<', '>']:
-            r = ast.InlineOp('<>', *args, wide = wide)
+        # # elif op_text == ['<', '>']:
+        # #     r = ast.InlineOp('<>', *args, wide = wide)
 
-        elif op_text == ['I(', ')I']:
+        # elif (len(op_text) == 2
+        #       and '<' in op_text[0]
+        #       and '>' in op_text[1]):
+        #     r = ast.InlineOp(tuple(op_text), *args, wide = wide)
+
+        if op_text == ['I(', ')I']:
             # TODO: fix op_text_and_ws here
             # print(ast.InlineOp.is_operator(args[0], '*'))
             if isinstance(args[1], ast.BlockOp) and args[1].operator == 'P':
@@ -466,6 +489,9 @@ def finalize(x):
 
             else:
                 r = ind = ast.BlockOp('I', *args[:-1], wide = wide)
+
+        elif len(op_text) == 2 and op_text[0] != op_text[1]:
+            r = ast.InlineOp(tuple(op_text), *args, wide = wide)
 
         elif ops[0].args[0].line_operator:
             if ops[0].args[0].text:
@@ -494,7 +520,9 @@ def order(left, right):
         return 'l'
     elif p1 < p2:
         return 'r'
-    elif m1 and (m1 is True or t2 in m1):
+    elif m1 and (m1 is True
+                 or (callable(m1) and m1(t2))
+                 or isinstance(m1, (list, tuple, str)) and t2 in m1):
         return 'a'
     else:
         return a1
