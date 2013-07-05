@@ -5,13 +5,15 @@ Implementing superscript
 In a `[.py.q] document, the following code will implement the `[^]
 operator so that it wraps its right hand side in `[<sup>] tags:
 
-python %
+supcode <-
   {
     @wrap_whitespace
     def sup(engine, node, left, right):
       return Gen(engine(left), Raw("<sup>"), engine(right), Raw("</sup>"))
     engine['maybe left ^ right'] = sup
   }
+
+{code_block(engine, None, "python", supcode)}
 
 Clarifying the code:
 
@@ -54,12 +56,7 @@ Exponent t^o^w^e^r^s work splendidly. Write \\\^ to escape \^:
 After
 -----
 
-{
-  @wrap_whitespace
-  def sup(engine, node, left, right):
-    return Gen(engine(left), Raw("<sup>"), engine(right), Raw("</sup>"))
-  engine['maybe left ^ right'] = sup
-}
+{engine(supcode)}
 
 3^2 + 4^2 = 5[^2]. ^[I can superscript whole sentences, too!]
 Exponent t^o^w^e^r^s work splendidly. Write \\\^ to escape \^:
@@ -73,16 +70,14 @@ You can use the `wrapper function to create the above function
 automatically. For instance, to define subscripts as `a_b (this will
 not disable emphasis since emphasis requires `[_] in prefix position):
 
-python %
+{show_as_and_run("python")}:
   {
     engine['lhs _ expr'] = wrapper('sub')
   }
 
-{engine['lhs _ expr'] = wrapper('sub')}
-
 A_ij = [sum_k](B_ik C_kj)
 
-By convention the arguments must be named `lhs (optional) and `expr
-(mandatory). `expr (the right hand side) is the one that will be
-wrapped.
+By convention the arguments must be named `lhs (optional argument) and
+`expr (mandatory). `expr (here, the right hand side) is the one that
+will be wrapped.
 

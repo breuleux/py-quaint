@@ -14,7 +14,6 @@ For instance, `[+] is an operator, `[++] is an operator, `[/_%%] is an
 operator, and so on. You can _escape an operator character or a
 bracket with \\ (e.g. `[\%]).
 
-
 {
   red = wrapper(style = "color: red; font-weight: bold")
   blue = wrapper(style = "color: blue; font-weight: bold")

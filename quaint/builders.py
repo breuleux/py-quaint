@@ -42,7 +42,9 @@ def default_bindings(engine):
         (("I", "i"), 'indent'),
 
         # Brackets
-        (((('[', ']'), None, None), [ast.Void, 'body', ast.Void]), 'bracket'),
+        # The outermost brackets are shed by create_pattern
+        # so the following will match [body]
+        ("[[body]]", 'bracket'),
         ("{body}", 'eval'),
         ("{f}: x", 'feval'),
 

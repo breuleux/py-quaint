@@ -13,7 +13,7 @@ Reading files
 In order to load data in YAML format from the file `data.yaml and put
 it in the variable `data, either of these statements will work:
 
-%
+{show_and_run}:
   data <= yaml::data.yaml
   data <= ::data.yaml
   {data = pyyaml.safe_load(open("data.yaml").read())}
@@ -27,21 +27,12 @@ straight Python if need be.
 
 Once the data is loaded, you can format it:
 
-python %
+{show_as_and_run("python")}:
   {
     Table(TableHeader("Rank", "Title", "Gross", "Year"),
           *[[i + 1, entry["Title"], entry["Gross"], entry["Year"]]
             for i, entry in enumerate(data)])
   }
-
-In action:
-
-data <= ::data.yaml
-{
-  Table(TableHeader("Rank", "Title", "Gross", "Year"),
-        *[[i + 1, entry["Title"], entry["Gross"], entry["Year"]]
-          for i, entry in enumerate(data)])
-}
 
 
 Embedding data
@@ -55,7 +46,7 @@ as an indented block below the directive. The caveat is this: each
 top-level key/value pair sets the variable named by the key to the
 value. For instance, the following:
 
-%
+{show_and_run}:
   {json}:
     {
       "grades": [
@@ -70,24 +61,8 @@ Will set the variable `grades to the list the key of the same name
 maps to, and the variable `something to the number 1234. Again, these
 variables can be used to build tables and whatnot:
 
-python %
+{show_as_and_run("python")}:
   {
     Table(*[[entry["Name"], entry["Grade"]]
             for entry in grades])
   }
-
-Result:
-
-{json}:
-  {
-    "grades": [
-      {"Name": "Jason", "Grade": 94},
-      {"Name": "Catherine", "Grade": 71},
-      {"Name": "Robert", "Grade": 48}
-    ]
-  }
-
-{
-  Table(*[[entry["Name"], entry["Grade"]]
-          for entry in grades])
-}

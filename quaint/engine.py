@@ -42,9 +42,10 @@ def create_pattern(ptree, properties):
     elif isinstance(ptree, ast.Op):
 
         if ast.is_square_bracket(ptree):
-            return create_pattern(ptree.args[1], properties)
+            ptree = ptree.args[1]
+            #return create_pattern(ptree.args[1], properties)
 
-        elif ptree.operator:
+        if ptree.operator:
 
             if 'wide' in properties: wide = True
             elif 'short' in properties: wide = False

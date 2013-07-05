@@ -144,16 +144,28 @@ def raw(engine, node):
 
 
 @wrap_whitespace
-def op(engine, node):
+def op(engine, node, **_):
     args = [engine(node.args[0])]
     if isinstance(node.operator, str):
         oper = [node.operator] * (len(node.args) - 1)
     else:
         oper = node.operator
     for token, op in zip(node.args[1:], oper):
-        args.append(engine(op))
+        args.append(Text(op))
         args.append(engine(token))
     # return Gen(Raw("<span>"), Gen(*args), Raw("</span>"))
+    return Gen(*args)
+
+@wrap_whitespace
+def rawop(engine, node, **_):
+    args = [engine(node.args[0])]
+    if isinstance(node.operator, str):
+        oper = [node.operator] * (len(node.args) - 1)
+    else:
+        oper = node.operator
+    for token, op in zip(node.args[1:], oper):
+        args.append(Raw(op))
+        args.append(engine(token))
     return Gen(*args)
 
 
@@ -279,7 +291,7 @@ def extract_and_codehl(lang, code, do_dedent = True, unescape_brackets = False):
     if isinstance(lang, ast.Void):
         lang = "text"
     else:
-        lang = lang.raw().strip().lower()
+        lang = source(lang).strip().lower()
 
     code = source(code)
     if do_dedent:
@@ -313,6 +325,18 @@ def code_block(engine, node, lang, code):
     return Gen(Raw('<div class="code code_block"><pre>'),
                Raw(extract_and_codehl(lang, code, True, False)),
                Raw('</pre></div>'))
+
+def show_and_run(engine, node, code):
+    return Gen(code_block(engine, node, "quaint", code),
+               engine(code))
+
+def show_as_and_run(lang):
+    def f(engine, node, code):
+        return Gen(code_block(engine, node, lang, code),
+                   engine(code))
+    return f
+
+
 
 def header_n(n):
     def header(engine, node, title = None):

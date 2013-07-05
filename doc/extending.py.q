@@ -165,7 +165,7 @@ pattern may fail.
 Here are a few examples of patterns and what they apply and don't
 apply to:
 
-<yaml>
+{yaml}:
   pattern_examples:
 
     - - "/ x"
@@ -197,6 +197,11 @@ apply to:
       - ["x/y"]
       - ["x / y", "[x / y]"]
       - ""
+
+    - - "[[x / y]]"
+      - ["[x / y]"]
+      - ["x / y"]
+      - ""
     
     - - "void x / y"
       - ["/y"]
@@ -208,7 +213,7 @@ apply to:
       - ["x / y+z"]
       - The `wide instruction applies to `y
 
-<css>
+{css}:
   .pattx {padding-left: 5px; padding-right: 5px; border: 1px solid #888}
 
 {
@@ -224,10 +229,7 @@ apply to:
           for p, app, noapp, comment in pattern_examples])
 }
 
-The pattern language is not _exhaustive (it can't match a square
-bracket node, for instance). On the off chance you have no idea how to
-craft a pattern string that describes what you want, the pattern can
-also be:
+The pattern can also be
 
 * A type. There's a match if `instanceof(node, type) is True.
 
@@ -279,7 +281,7 @@ Its meaning should be straightforward, save for a few things...
 * python`engine.extend_environment(x = "banana", sup = sup) modifies
   the environment available to embedded code. It is equivalent to
   embedding python`{x = "banana"; sup = sup}. If this extension is
-  loaded, `{x} will therefore generate "banana" and `[<sup> abcd] will
+  loaded, `{x} will therefore generate "banana" and `[{sup}:abcd] will
   have the same effect as `[^abcd].
 
 __Loading your extension:
