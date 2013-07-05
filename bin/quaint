@@ -106,9 +106,11 @@ def x_eval(s, path, args):
 
 @needs_source
 def x_html(s, path, args):
+
     ast = parse(Source(s, url = path))
 
-    documents = html_documents()
+    documents = {'xlinks': engine.SetDocument(),
+                 'main': engine.HTMLDocument()}
     documents['xlinks'].add('stylesheet', 'style/main.css')
     documents['xlinks'].add('stylesheet', 'style/pygments.css')
 
@@ -117,10 +119,26 @@ def x_html(s, path, args):
     else:
         eng = safe_engine()
 
-    evaluate(ast, eng, documents)
+    evaluate(engine.HTMLMetaNode(ast), eng, documents)
 
-    html = engine.generate_html_file(documents)
+    html = documents['main'].data
     print(html)
+
+
+
+    # documents = html_documents()
+    # documents['xlinks'].add('stylesheet', 'style/main.css')
+    # documents['xlinks'].add('stylesheet', 'style/pygments.css')
+
+    # if not args['--safe'] and (not path or path.endswith('.py.q')):
+    #     eng = default_engine()
+    # else:
+    #     eng = safe_engine()
+
+    # evaluate(ast, eng, documents)
+
+    # html = engine.generate_html_file(documents)
+    # print(html)
 
 
 if __name__ == '__main__':

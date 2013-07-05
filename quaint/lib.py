@@ -220,6 +220,8 @@ quote = parts_wrapper(('source', 'quote'),
 def plain_or_code(engine, node):
     if ast.is_curly_bracket(node):
         return str(pyeval(node.args[1].raw(), engine.environment))
+    elif ast.is_square_bracket(node):
+        return node.args[1].raw()
     else:
         return node.raw()
 
@@ -419,6 +421,51 @@ def feval(engine, node, f, x):
     code = dedent(source(f))
     f = pyeval(code, engine.environment)
     return f(engine, node, x)
+
+
+def extract_props(node, results):
+
+    if isinstance(node, str):
+        results['tag'] = node
+
+    elif ast.is_oper(node, ''):
+        for arg in node.args:
+            extract_props(arg, results)
+
+    elif ast.is_oper(node, '.'):
+        assert(ast.is_void(node.args[0]))
+        assert(isinstance(node.args[1], str))
+        results['class'].add(node.args[1])
+
+    elif ast.is_oper(node, '#'):
+        assert(ast.is_void(node.args[0]))
+        assert(isinstance(node.args[1], str))
+        results['id'] = node.args[1]
+
+    elif ast.is_oper(node, '='):
+        results[source_nows(node.args[0])] = source_nows(node.args[1])
+
+    elif ast.is_square_bracket(node):
+        extract_props(node.args[1], results)
+
+    else:
+        raise Exception("Unknown directive", node)
+
+    return results
+
+
+@wrap_whitespace
+def domnode(engine, node, tag, body):
+    props = extract_props(tag, {'tag': 'div', 'class': set()})
+    otag, ctag = make_tags(props.pop('tag'), props, engine, [])
+    result = Gen(otag, engine(body), ctag)
+    if 'id' in props:
+        return Gen(GenFor('links', props['id'], '#'+props['id']), result)
+    else:
+        return result
+
+    
+
 
 
 def css(engine, node, x):

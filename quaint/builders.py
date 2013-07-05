@@ -21,77 +21,84 @@ def test_sequence_of(c, cls = ast.Op):
     return test
 
 
-def default_bindings(engine):
+bare_bindings = [
+    # MetaNodes
+    (mod_engine.MetaNode, lambda engine, node: node(engine)),
+    
+    # Basic AST types
+    (ast.Void, 'text'),
+    (ast.Nullary, 'text'),
+    (str, 'text'),
+    (ast.Op, 'op'),
 
+    # Paragraphs and indent blocks
+    (("P", "par"), 'paragraph'),
+    (("B", "pars"), 'blocks'),
+    (("I", "i"), 'indent'),
+
+    # Brackets
+    # The outermost brackets are shed by create_pattern
+    # so the following will match [body]
+    ("[[body]]", 'bracket'),
+    ]
+
+
+default_bindings = bare_bindings + [
+
+    # Brackets
+    # The outermost brackets are shed by create_pattern
+    # so the following will match [body]
+    ("[[body]]", 'bracket'),
+    ("{body}", 'eval'),
+    ("{f}: x", 'feval'),
+
+    # Emphasis
+    ('_ expr', 'em'),
+    ('__ expr', 'strong'),
+
+    # Links
+    ('text @ maybe link', 'link'),
+    ('maybe text @ type ! maybe link', 'special_link'),
+    ('maybe text @# label', 'anchor'),
+
+    ('text :: maybe link', 'link'),
+    ('maybe text :: type : maybe link', 'special_link'),
+    ('maybe text :# label', 'anchor'),
+
+    # Code
+    ('maybe lang ` code', 'code'),
+    ('maybe lang % code', 'code_block'),
+
+    # Headers
+    (test_sequence_of('=', ast.BlockOp), 'header1', "="),
+    (test_sequence_of('-', ast.BlockOp), 'header2', "-"),
+    ('wide [= title]', 'header1'),
+    ('wide [== title]', 'header2'),
+    ('wide [=== title]', 'header3'),
+    ('wide [==== title]', 'header4'),
+    ('wide [===== title]', 'header5'),
+    ('wide [====== title]', 'header6'),
+
+    # Lists
+    ('wide [* item]', 'ulist'),
+    ('wide [# item]', 'olist'),
+    ('wide [term := definition]', 'dlist'),
+
+    # Tables
+    ('wide [+ row]', 'table_header'),
+    ('wide [| row]', 'table_row'),
+
+    # Others
+    ('tag .. body', 'domnode'),
+    ('wide [maybe source >> quote]', 'quote'),
+    (';; x', 'ignore'),
+    ('name <- body', 'setvar'),
+    ('name <= maybe type :: file', 'load_in_var'),
+
+    ]
+
+def apply_bindings(bindings, engine):
     env = engine.environment
-
-    bindings = [
-
-        # MetaNodes
-        (mod_engine.MetaNode, lambda engine, node: node(engine)),
-
-        # Basic AST types
-        (ast.Void, 'text'),
-        (ast.Nullary, 'text'),
-        (str, 'text'),
-        (ast.Op, 'op'),
-
-        # Paragraphs and indent blocks
-        (("P", "par"), 'paragraph'),
-        (("B", "pars"), 'blocks'),
-        (("I", "i"), 'indent'),
-
-        # Brackets
-        # The outermost brackets are shed by create_pattern
-        # so the following will match [body]
-        ("[[body]]", 'bracket'),
-        ("{body}", 'eval'),
-        ("{f}: x", 'feval'),
-
-        # Emphasis
-        ('_ expr', 'em'),
-        ('__ expr', 'strong'),
-
-        # Links
-        ('text @ maybe link', 'link'),
-        ('maybe text @ type ! maybe link', 'special_link'),
-        ('maybe text @# label', 'anchor'),
-
-        ('text :: maybe link', 'link'),
-        ('maybe text :: type : maybe link', 'special_link'),
-        ('maybe text :# label', 'anchor'),
-
-        # Code
-        ('maybe lang ` code', 'code'),
-        ('maybe lang % code', 'code_block'),
-
-        # Headers
-        (test_sequence_of('=', ast.BlockOp), 'header1', "="),
-        (test_sequence_of('-', ast.BlockOp), 'header2', "-"),
-        ('wide [= title]', 'header1'),
-        ('wide [== title]', 'header2'),
-        ('wide [=== title]', 'header3'),
-        ('wide [==== title]', 'header4'),
-        ('wide [===== title]', 'header5'),
-        ('wide [====== title]', 'header6'),
-
-        # Lists
-        ('wide [* item]', 'ulist'),
-        ('wide [# item]', 'olist'),
-        ('wide [term := definition]', 'dlist'),
-
-        # Tables
-        ('wide [+ row]', 'table_header'),
-        ('wide [| row]', 'table_row'),
-
-        # Others
-        ('wide [maybe source >> quote]', 'quote'),
-        (';; x', 'ignore'),
-        ('name <- body', 'setvar'),
-        ('name <= maybe type :: file', 'load_in_var'),
-
-        ]
-
     for b in bindings:
         if len(b) == 3:
             handler, fn, first_character = b
@@ -101,7 +108,6 @@ def default_bindings(engine):
         if isinstance(fn, str):
             fn = env[fn]
         engine.register(handler, fn, first_character)
-
     return engine
 
 
@@ -112,10 +118,11 @@ def default_environment():
     return env
 
 
-def default_engine(error_handler = mod_engine.inline_error_handler):
+def default_engine(error_handler = mod_engine.inline_error_handler,
+                   bindings = default_bindings):
     engine = mod_engine.Engine(error_handler)
     engine.environment = default_environment()
-    default_bindings(engine)
+    apply_bindings(bindings, engine)
     engine.environment['engine'] = engine
     return engine
 
@@ -131,7 +138,7 @@ code code_block
 header1 header2 header3 header4 header5 header6
 ulist olist dlist
 table_header table_row
-quote ignore setvar load_in_var
+domnode quote ignore setvar load_in_var
 toc
 meta html css json yaml show_args include
 """.split()
@@ -143,10 +150,11 @@ meta html css json yaml show_args include
     env['feval'] = lib.safe_feval
     return env
 
-def safe_engine(error_handler = mod_engine.inline_error_handler):
+def safe_engine(error_handler = mod_engine.inline_error_handler,
+                bindings = default_bindings):
     engine = mod_engine.Engine(error_handler)
     engine.environment = safe_environment()
-    default_bindings(engine)
+    apply_bindings(bindings, engine)
     engine.environment['engine'] = engine
     return engine
 

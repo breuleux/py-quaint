@@ -149,11 +149,12 @@ def inline_error_handler(engine, ptree, exc):
 
 class MetaNode:
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         self.args = args
+        self.kwargs = kwargs
 
     def __call__(self, engine):
-        return self.process(engine, *self.args)
+        return self.process(engine, *self.args, **self.kwargs)
 
 
 def firstchar(ptree):
@@ -224,8 +225,9 @@ class Engine:
         self.register(item, value)
 
     def clone(self):
-        rval = Matcher()
+        rval = Engine(self.error_handler)
         rval.ctors.update(self.ctors)
+        rval.environment.update(self.environment)
         return rval
 
     def __call__(self, ptree):
@@ -394,6 +396,19 @@ def fork_doc(docs, docname, gen):
     else:
         return gen()
 
+
+
+class ProxyMetaNode(MetaNode):
+    def process(self, engine, proxy, **nodes):
+        engine = engine.clone()
+        engine.environment.update(nodes)
+        return engine(proxy)
+
+
+class HTMLMetaNode(MetaNode):
+    def process(self, engine, node):
+        return HTMLDocumentGenerator(engine(node))
+
 class HTMLDocumentGenerator(Generator):
 
     def __init__(self, gen):
@@ -419,13 +434,14 @@ class HTMLDocumentGenerator(Generator):
                 + self.gen.docmaps(new))
 
     def deps(self):
-        return {'main': {'_sub_' + x
-                         for x in 'main css js links xlinks meta sections error'.split()}}
+        subdocs = {'_sub_' + x for x in
+                   'main css js links xlinks meta sections errors'.split()}
+        return {'main': subdocs}
 
     def generate_main(self, docs):
         unmangled_docs = {k[5:]: v
                           for k, v in docs.items() if k.startswith('_sub_')}
-        return generate_html_file(unmangled_docs)
+        docs['main'].add(generate_html_file(unmangled_docs))
 
 
 
