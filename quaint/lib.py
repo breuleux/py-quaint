@@ -373,8 +373,12 @@ def table_header(engine, node, row):
 def ulist(engine, node, item):
     return List(engine(item))
 
-def olist(engine, node, item):
-    return List(engine(item), ordered = True)
+def olist(engine, node, start = None, item = None):
+    if start is None or ast.is_void(start):
+        start = True
+    else:
+        start = source_nows(start)
+    return List(engine(item), ordered = start)
 
 def dlist(engine, node, term, definition):
     return Definitions((engine(term), engine(definition)))

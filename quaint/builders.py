@@ -81,7 +81,8 @@ default_bindings = bare_bindings + [
 
     # Lists
     ('wide [* item]', 'ulist'),
-    ('wide [# item]', 'olist'),
+    ('wide [maybe start # item]', 'olist'),
+    ('wide [. # item]', 'olist'),
     ('wide [term := definition]', 'dlist'),
 
     # Tables
@@ -159,18 +160,38 @@ def safe_engine(error_handler = mod_engine.inline_error_handler,
     return engine
 
 
-def html_documents():
+document_types = dict(
+    css = mod_engine.TextDocument,
+    js = mod_engine.TextDocument,
+    links = mod_engine.RepoDocument,
+    xlinks = mod_engine.SetDocument,
+    sections = mod_engine.SectionsDocument,
+    meta = mod_engine.RepoDocument,
+    errors = mod_engine.ListDocument,
+    )
 
-    documents = {
-        'main': mod_engine.HTMLDocument(),
-        'css': mod_engine.TextDocument(),
-        'js': mod_engine.TextDocument(),
-        'links': mod_engine.RepoDocument(),
-        'xlinks': mod_engine.SetDocument(),
-        'sections': mod_engine.SectionsDocument(),
-        'meta': mod_engine.RepoDocument(),
-        'errors': mod_engine.ListDocument(),
-        }
 
-    return documents
+def make_documents(*names, **others):
+    docs = {}
+    for name in names:
+        docs[name] = document_types[name]()
+    docs.update(others)
+    return docs
+
+
+
+# def html_documents():
+
+#     documents = {
+#         'main': mod_engine.HTMLDocument(),
+#         'css': mod_engine.TextDocument(),
+#         'js': mod_engine.TextDocument(),
+#         'links': mod_engine.RepoDocument(),
+#         'xlinks': mod_engine.SetDocument(),
+#         'sections': mod_engine.SectionsDocument(),
+#         'meta': mod_engine.RepoDocument(),
+#         'errors': mod_engine.ListDocument(),
+#         }
+
+#     return documents
 

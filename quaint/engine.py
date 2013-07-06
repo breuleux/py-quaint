@@ -629,11 +629,50 @@ class AutoMergeGenerator(PartsGenerator):
 class ListGenerator(PartsGenerator):
 
     def __init__(self, *children, ordered = False):
-        self.ordered = ordered
+        if ordered is False:
+            o, type, start = False, None, None
+        elif isinstance(ordered, tuple):
+            o, type, start = ordered
+        elif ordered is True:
+            o, type, start = True, None, None
+        elif ' ' in ordered:
+            o = True
+            type, start = ordered.split()
+            start = int(start)
+            type = dict(num = "1",
+                        alpha = "a", Alpha = "A",
+                        roman = "i", Roman = "I").get(type, type)
+        elif re.match("-?[0-9]+", ordered):
+            o, type, start = True, "1", int(ordered)
+        elif ordered == 'i':
+            o, type, start = True, "i", 1
+        elif ordered == 'I':
+            o, type, start = True, "I", 1
+        elif ordered.isalpha():
+            o = True
+            if ordered == ordered.lower():
+                type = "a"
+            else:
+                type = "A"
+            displace = ord(type)
+            start = 0
+            for c in ordered:
+                start *= 26
+                start += ord(c) - displace + 1
+
+        self.ordered = (o, type, start)
         self.children = children
 
     def parts(self):
-        yield RawGenerator("<ol>" if self.ordered else "<ul>")
+        o, type, start = self.ordered
+        if o:
+            if type is None: type = "1"
+            if start is None: start = 1
+            otag = '<ol type="{type}" start="{start}">'.format(type=type, start=start)
+        else:
+            otag = "<ul>"
+
+        yield RawGenerator(otag)
         for child in self.children:
             yield RawGenerator("<li>")
             yield child
@@ -641,11 +680,27 @@ class ListGenerator(PartsGenerator):
         yield RawGenerator("</ol>" if self.ordered else "</ul>")
 
     def merge(self, other):
-        if isinstance(other, ListGenerator) and self.ordered == other.ordered:
+        if isinstance(other, ListGenerator):
+            o1, type1, start1 = self.ordered
+            o2, type2, start2 = other.ordered
+            if (o1 != o2 or
+                not (type1 is None or type2 is None or type1 == type2) or
+                not (start1 is None or start2 is None or
+                     start1 + len(self.children) == start2)):
+                return None
+            if start1 is None and start2 is not None:
+                start1 = start2 - len(self.children)
             return ListGenerator(*(self.children + other.children),
-                                 ordered = self.ordered)
+                                 ordered = (o1, type1 or type2, start1))
         else:
             return None
+
+    # def merge(self, other):
+    #     if isinstance(other, ListGenerator) and self.ordered == other.ordered:
+    #         return ListGenerator(*(self.children + other.children),
+    #                              ordered = self.ordered)
+    #     else:
+    #         return None
 
 
 class DefinitionsGenerator(PartsGenerator):

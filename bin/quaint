@@ -25,7 +25,7 @@ from quaint import engine
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
 from quaint.engine import evaluate
-from quaint.builders import default_engine, safe_engine, html_documents
+from quaint.builders import default_engine, safe_engine, make_documents
 
 from ug.format import errors
 from quaint.displayrules import ugdescr, rules
@@ -94,7 +94,8 @@ def x_ast(s, path, args):
 @needs_source
 def x_eval(s, path, args):
     ast = parse(Source(s, url = path))
-    documents = html_documents()
+    documents = make_documents('js', 'css', 'links', 'xlinks', 'sections', 'meta',
+                               main = engine.HTMLDocument())
 
     if not args['--safe'] and (not path or path.endswith('.py.q')):
         eng = default_engine(engine.default_error_handler)
