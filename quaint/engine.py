@@ -136,15 +136,15 @@ def inline_error_handler(engine, ptree, exc):
         return ""
     etype, e, tb = exc
     text = source_nows(ptree)
-    return MultiGenerator(GeneratorFor('errors', ptree, etype, e, tb),
-                          RawGenerator(ptree.whitespace_left),
-                          RawGenerator('<span class="error">'),
-                          TextGenerator(text),
-                          RawGenerator('</span>'),
-                          RawGenerator('<sup>'),
-                          GeneratorFrom('errors', find),
-                          RawGenerator('</sup>'),
-                          RawGenerator(ptree.whitespace_right))
+    return Gen(GenFor('errors', ptree, etype, e, tb),
+               Raw(ptree.whitespace_left),
+               Raw('<span class="error">'),
+               Text(text),
+               Raw('</span>'),
+               Raw('<sup>'),
+               GenFrom('errors', find),
+               Raw('</sup>'),
+               Raw(ptree.whitespace_right))
 
 
 class MetaNode:
@@ -409,7 +409,7 @@ class Generator:
         return results
 
 
-class GeneratorFor(Generator):
+class GenFor(Generator):
 
     def __init__(self, docname, *args):
         self.docname = docname
@@ -423,7 +423,7 @@ class GeneratorFor(Generator):
 
 
 
-class GeneratorFrom(Generator):
+class GenFrom(Generator):
 
     def __init__(self, docname, f):
         self.docname = docname
@@ -553,7 +553,7 @@ class KeywordGenerator(Generator):
         doc.add(self.associations.get(False, "?"))
 
 
-class RawGenerator(Generator):
+class Raw(Generator):
 
     def __init__(self, text):
         self.text = str(text)
@@ -565,7 +565,7 @@ class RawGenerator(Generator):
         docs['text'].add(self.text)
 
 
-class MarkupGenerator(Generator):
+class Markup(Generator):
 
     def __init__(self, text):
         self.text = str(text)
@@ -574,7 +574,7 @@ class MarkupGenerator(Generator):
         docs['html'].add(self.text)
 
 
-class TextGenerator(Generator):
+class Text(Generator):
 
     re1 = re.compile(r"((?<=[^\\])|^)~")
     re2 = re.compile(r"\\("+rx_choice(all_op + [" ", "\\"])+")")
@@ -591,15 +591,6 @@ class TextGenerator(Generator):
 
     def generate_html(self, docs):
         docs['html'].add(cgi.escape(self.text))
-
-
-class WSGenerator(RawGenerator):
-
-    re1 = re.compile("[^ \n]+")
-
-    def generate_html(self, docs):
-        text = self.re1.sub("", self.text)
-        docs['html'].add(text)
 
 
 class ProxyGenerator(Generator):
@@ -621,12 +612,12 @@ class PartsGenerator(Generator):
         results = [(current, self, self.deps(), self.generators())]
         for child in self.parts():
             if not isinstance(child, Generator):
-                child = TextGenerator(child)
+                child = Text(child)
             results += child.docmaps(current)
         return results
 
 
-class MultiGenerator(PartsGenerator):
+class Gen(PartsGenerator):
 
     def __init__(self, *children):
         self.children = children
@@ -656,7 +647,7 @@ class RedirectGenerator(Generator):
         return {'html': 'redirect'}
 
 
-class SectionGenerator(RedirectGenerator):
+class Section(RedirectGenerator):
 
     def __init__(self, section_name, contents, level):
         self.section_name = section_name
@@ -722,7 +713,7 @@ class WrapGenerator(PartsGenerator):
             yield self.suffix
 
 
-class AutoMergeGenerator(PartsGenerator):
+class AutoMerge(PartsGenerator):
 
     def __init__(self, children):
         c = children[:1]
@@ -739,7 +730,7 @@ class AutoMergeGenerator(PartsGenerator):
         return self.children
 
 
-class ListGenerator(PartsGenerator):
+class List(PartsGenerator):
 
     def __init__(self, *children, ordered = False):
         if ordered is False:
@@ -787,15 +778,15 @@ class ListGenerator(PartsGenerator):
             otag = "<ul>"
             ctag = "</ul>"
 
-        yield MarkupGenerator(otag)
+        yield Markup(otag)
         for child in self.children:
-            yield MarkupGenerator("<li>")
+            yield Markup("<li>")
             yield child
-            yield MarkupGenerator("</li>")
-        yield MarkupGenerator(ctag)
+            yield Markup("</li>")
+        yield Markup(ctag)
 
     def merge(self, other):
-        if isinstance(other, ListGenerator):
+        if isinstance(other, List):
             o1, type1, start1 = self.ordered
             o2, type2, start2 = other.ordered
             if (o1 != o2 or
@@ -805,31 +796,31 @@ class ListGenerator(PartsGenerator):
                 return None
             if start1 is None and start2 is not None:
                 start1 = start2 - len(self.children)
-            return ListGenerator(*(self.children + other.children),
-                                 ordered = (o1, type1 or type2, start1))
+            return List(*(self.children + other.children),
+                         ordered = (o1, type1 or type2, start1))
         else:
             return None
 
 
-class DefinitionsGenerator(PartsGenerator):
+class Definitions(PartsGenerator):
 
     def __init__(self, *children):
         self.children = children
 
     def parts(self):
-        yield MarkupGenerator("<dl>")
+        yield Markup("<dl>")
         for t, d in self.children:
-            yield MarkupGenerator("<dt>")
+            yield Markup("<dt>")
             yield t
-            yield MarkupGenerator("</dt>")
-            yield MarkupGenerator("<dd>")
+            yield Markup("</dt>")
+            yield Markup("<dd>")
             yield d
-            yield MarkupGenerator("</dd>")
-        yield MarkupGenerator("</dl>")
+            yield Markup("</dd>")
+        yield Markup("</dl>")
 
     def merge(self, other):
-        if isinstance(other, DefinitionsGenerator):
-            return DefinitionsGenerator(*(self.children + other.children))
+        if isinstance(other, Definitions):
+            return Definitions(*(self.children + other.children))
         else:
             return None
 
@@ -844,42 +835,42 @@ class TableHeader:
         return iter(self.cells)
 
 
-class TableGenerator(PartsGenerator):
+class Table(PartsGenerator):
 
     def __init__(self, *children):
         self.children = children
 
     def parts(self):
-        yield MarkupGenerator("<table>")
+        yield Markup("<table>")
         for cells in self.children:
             header = isinstance(cells, TableHeader)
-            yield MarkupGenerator("<tr>")
+            yield Markup("<tr>")
             for cell in cells:
-                yield MarkupGenerator("<th>" if header else "<td>")
+                yield Markup("<th>" if header else "<td>")
                 yield cell
-                yield MarkupGenerator("</th>" if header else "</td>")
-            yield MarkupGenerator("</tr>")
-        yield MarkupGenerator("</table>")
+                yield Markup("</th>" if header else "</td>")
+            yield Markup("</tr>")
+        yield Markup("</table>")
 
     def merge(self, other):
-        if isinstance(other, TableGenerator):
-            return TableGenerator(*(self.children + other.children))
+        if isinstance(other, Table):
+            return Table(*(self.children + other.children))
         else:
             return None
 
 
-class ParagraphGenerator(WrapGenerator):
+class Paragraph(WrapGenerator):
 
     def __init__(self, children, can_merge = False):
         self.can_merge = can_merge
-        super().__init__(MarkupGenerator("<p>"),
-                         TextGenerator("\n"),
-                         MarkupGenerator("</p>"),
+        super().__init__(Markup("<p>"),
+                         Text("\n"),
+                         Markup("</p>"),
                          children)
 
     def merge(self, other):
-        if self.can_merge and isinstance(other, ParagraphGenerator):
-            return ParagraphGenerator(self.children + other.children, True)
+        if self.can_merge and isinstance(other, Paragraph):
+            return Paragraph(self.children + other.children, True)
         else:
             return None
 
