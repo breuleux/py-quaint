@@ -252,17 +252,10 @@ class TextDocument:
     def add(self, data):
         self.data += data
 
-    def get(self):
-        return self.data
-
     def clone(self):
         rval = self.__class__()
         rval.data = self.data
         return rval
-
-
-class HTMLDocument(TextDocument):
-    pass
 
 
 class SetDocument:
@@ -314,6 +307,59 @@ class RepoDocument:
         rval = self.__class__()
         rval.data = dict(self.data)
         return rval
+
+
+class HTMLDocument(TextDocument):
+    def format_html(self):
+        return self.data
+
+class CSSDocument(TextDocument):
+    def format_html(self):
+        return "<style>%s</style>" % self.data
+
+class JSDocument(TextDocument):
+    def format_html(self):
+        return "<script>%s</script>" % self.data
+
+class XLinksDocument(SetDocument):
+    def format_html(self):
+        xlinks = []
+        for type, link in self.data:
+            xlinks.append('<link rel={type} href="{link}">'.format(
+                    type = type, link = link))
+        return "\n".join(xlinks)
+
+class ErrorsDocument(ListDocument):
+    def format_html(self):
+        errors = self.data
+        if errors:
+            errtext = ""
+            for i, (culprit, etype, error, tb) in enumerate(errors):
+                errsource = source(culprit)
+                tb = traceback.format_tb(tb)
+                errtext += dedent("""
+                  <div class="err_report" id="__ERR_{i}">
+                    <div class="err_source">
+                      <span class="err_num">E{i}</span>
+                      <div>{errsource}</div>
+                      <div>{loc}</div>
+                    </div>
+                    <div class="err_exception">
+                      <div class="err_type">{etype}</div>
+                      <div class="err_contents">{error}</div>
+                    </div>
+                    <div class="err_traceback">{tb}</div>
+                  </div>
+                  """).format(errsource = cgi.escape(errsource),
+                              loc = cgi.escape(str(culprit.location)),
+                              error = cgi.escape(str(error)),
+                              etype = cgi.escape(etype.__name__),
+                              tb = cgi.escape("".join(tb)),
+                              i = i + 1)
+            errtext = '<div class="err_reports">%s</div>' % errtext
+        else:
+            errtext = ""
+        return errtext
 
 
 class SectionsDocument:
@@ -383,11 +429,11 @@ class GeneratorFrom(Generator):
         self.docname = docname
         self.f = f
 
-    def generate_main(self, docs):
-        docs['main'].add(self.f(docs[self.docname]))
+    def generate_html(self, docs):
+        docs['html'].add(self.f(docs[self.docname]))
 
     def deps(self):
-        return {'main': self.docname}
+        return {'html': self.docname}
 
 
 def fork_doc(docs, docname, gen):
@@ -415,33 +461,81 @@ class HTMLDocumentGenerator(Generator):
         self.gen = gen
 
     def docmaps(self, current):
+        for (doc, type) in [('html', HTMLDocument),
+                            ('_sub_html', HTMLDocument),
+                            ('css', CSSDocument),
+                            ('js', JSDocument),
+                            ('links', RepoDocument),
+                            ('xlinks', XLinksDocument),
+                            ('meta', RepoDocument),
+                            ('sections', SectionsDocument),
+                            ('errors', ErrorsDocument)]:
+            if doc not in current:
+                current[doc] = type()
 
-        new_documents = dict(
-            main = fork_doc(current, 'main', HTMLDocument),
-            css = fork_doc(current, 'css', TextDocument),
-            js = fork_doc(current, 'js', TextDocument),
-            links = fork_doc(current, 'links', RepoDocument),
-            xlinks = fork_doc(current, 'xlinks', SetDocument),
-            meta = fork_doc(current, 'meta', RepoDocument),
-            sections = SectionsDocument(),
-            errors = ListDocument())
-
-        new = dict(current, **new_documents)
-        current = dict(current, **{'_sub_' + k: v
-                                   for k, v in new_documents.items()})
-
+        subd = dict(current, html = current['_sub_html'])
         return ([(current, self, self.deps(), self.generators())]
-                + self.gen.docmaps(new))
+                + self.gen.docmaps(subd))
 
     def deps(self):
-        subdocs = {'_sub_' + x for x in
-                   'main css js links xlinks meta sections errors'.split()}
-        return {'main': subdocs}
+        subdocs = set('_sub_html css js links xlinks meta sections errors'.split())
+        return {'html': subdocs}
 
-    def generate_main(self, docs):
-        unmangled_docs = {k[5:]: v
-                          for k, v in docs.items() if k.startswith('_sub_')}
-        docs['main'].add(generate_html_file(unmangled_docs))
+    def generate_html(self, docs):
+        unmangled_docs = dict(docs, html = docs['_sub_html'])
+        docs['html'].add(generate_html_file(unmangled_docs))
+
+# class HTMLDocumentGenerator(Generator):
+
+#     def __init__(self, gen):
+#         self.gen = gen
+
+#     def docmaps(self, current):
+
+#         new_documents = dict(
+#             main = fork_doc(current, 'main', HTMLDocument),
+#             css = fork_doc(current, 'css', TextDocument),
+#             js = fork_doc(current, 'js', TextDocument),
+#             links = fork_doc(current, 'links', RepoDocument),
+#             xlinks = fork_doc(current, 'xlinks', SetDocument),
+#             meta = fork_doc(current, 'meta', RepoDocument),
+#             sections = SectionsDocument(),
+#             errors = ListDocument())
+
+#         new = dict(current, **new_documents)
+#         current = dict(current, **{'_sub_' + k: v
+#                                    for k, v in new_documents.items()})
+
+#         return ([(current, self, self.deps(), self.generators())]
+#                 + self.gen.docmaps(new))
+
+#     def deps(self):
+#         subdocs = {'_sub_' + x for x in
+#                    'main css js links xlinks meta sections errors'.split()}
+#         return {'main': subdocs}
+
+#     def generate_main(self, docs):
+#         unmangled_docs = {k[5:]: v
+#                           for k, v in docs.items() if k.startswith('_sub_')}
+#         docs['main'].add(generate_html_file(unmangled_docs))
+
+# class MultiMetaNode(MetaNode):
+#     def process(self, engine, docs, nodes):
+#         return MultiDocumentGenerator(docs,
+#                                       [(name, engine(node))
+#                                        for name, node in nodes])
+
+# class MultiDocumentGenerator(Generator):
+
+#     def __init__(self, docnames, gens):
+#         self.docnames = docnames
+#         self.gens = gens
+
+#     def generate_globalinfo(self, docs):
+#         dest = docs['globalinfo']
+#         for name, gen in self.gens:
+#             d = docs['_doc_' + name]
+#             for 
 
 
 
@@ -450,8 +544,8 @@ class KeywordGenerator(Generator):
     def __init__(self, associations):
         self.associations = associations
 
-    def generate_main(self, docs):
-        doc = docs['main']
+    def generate_html(self, docs):
+        doc = docs['html']
         for cls in doc.__class__.__mro__:
             if cls in self.associations:
                 doc.add(self.associations[cls])
@@ -464,29 +558,48 @@ class RawGenerator(Generator):
     def __init__(self, text):
         self.text = str(text)
 
-    def generate_main(self, docs):
-        docs['main'].add(self.text)
+    def generate_html(self, docs):
+        docs['html'].add(self.text)
+
+    def generate_text(self, docs):
+        docs['text'].add(self.text)
 
 
-class TextGenerator(RawGenerator):
+class MarkupGenerator(Generator):
+
+    def __init__(self, text):
+        self.text = str(text)
+
+    def generate_html(self, docs):
+        docs['html'].add(self.text)
+
+
+class TextGenerator(Generator):
 
     re1 = re.compile(r"((?<=[^\\])|^)~")
     re2 = re.compile(r"\\("+rx_choice(all_op + [" ", "\\"])+")")
 
-    def generate_main(self, docs):
-        text = self.re1.sub("", self.text)
+    def __init__(self, text):
+        text = str(text)
+        self.source = text
+        text = self.re1.sub("", text)
         text = self.re2.sub("\\1", text)
-        # print(repr(self.text), repr(text))
-        docs['main'].add(cgi.escape(text))
+        self.text = text
+
+    def generate_text(self, docs):
+        docs['text'].add(self.text)
+
+    def generate_html(self, docs):
+        docs['html'].add(cgi.escape(self.text))
 
 
 class WSGenerator(RawGenerator):
 
     re1 = re.compile("[^ \n]+")
 
-    def generate_main(self, docs):
+    def generate_html(self, docs):
         text = self.re1.sub("", self.text)
-        docs['main'].add(text)
+        docs['html'].add(text)
 
 
 class ProxyGenerator(Generator):
@@ -534,13 +647,13 @@ class RedirectGenerator(Generator):
         mydocs = dict(current)
         mydocs['redirect'] = doc
         subdocs = dict(current)
-        subdocs['main'] = doc
+        subdocs['html'] = doc
         results = [(mydocs, self, self.deps(), self.generators())]
         results += self.gen.docmaps(subdocs)
         return results
 
     def deps(self):
-        return {'main': 'redirect'}
+        return {'html': 'redirect'}
 
 
 class SectionGenerator(RedirectGenerator):
@@ -552,19 +665,19 @@ class SectionGenerator(RedirectGenerator):
 
     def deps(self):
         return {'sections': 'redirect',
-                'main': 'redirect'}
+                'html': 'redirect'}
 
     def generate_sections(self, docs):
         docs['sections'].add(self.section_name, docs['redirect'], self.level)
 
-    def generate_main(self, docs):
-        docs['main'].add(docs['redirect'].data)
+    def generate_html(self, docs):
+        docs['html'].add(docs['redirect'].data)
 
 
 class TOCGenerator(Generator):
 
     def deps(self):
-        return {'main': 'sections'}
+        return {'html': 'sections'}
 
     def format_section(self, s, results, bah):
         if s.name is not None:
@@ -580,10 +693,10 @@ class TOCGenerator(Generator):
             results.append("</ul>")
         return results
 
-    def generate_main(self, docs):
-        main = docs['main']
+    def generate_html(self, docs):
+        html = docs['html']
         sections = docs['sections']
-        main.add("".join(self.format_section(sections, [], False)))
+        html.add("".join(self.format_section(sections, [], False)))
 
 
 class WrapGenerator(PartsGenerator):
@@ -674,12 +787,12 @@ class ListGenerator(PartsGenerator):
             otag = "<ul>"
             ctag = "</ul>"
 
-        yield RawGenerator(otag)
+        yield MarkupGenerator(otag)
         for child in self.children:
-            yield RawGenerator("<li>")
+            yield MarkupGenerator("<li>")
             yield child
-            yield RawGenerator("</li>")
-        yield RawGenerator(ctag)
+            yield MarkupGenerator("</li>")
+        yield MarkupGenerator(ctag)
 
     def merge(self, other):
         if isinstance(other, ListGenerator):
@@ -704,15 +817,15 @@ class DefinitionsGenerator(PartsGenerator):
         self.children = children
 
     def parts(self):
-        yield RawGenerator("<dl>")
+        yield MarkupGenerator("<dl>")
         for t, d in self.children:
-            yield RawGenerator("<dt>")
+            yield MarkupGenerator("<dt>")
             yield t
-            yield RawGenerator("</dt>")
-            yield RawGenerator("<dd>")
+            yield MarkupGenerator("</dt>")
+            yield MarkupGenerator("<dd>")
             yield d
-            yield RawGenerator("</dd>")
-        yield RawGenerator("</dl>")
+            yield MarkupGenerator("</dd>")
+        yield MarkupGenerator("</dl>")
 
     def merge(self, other):
         if isinstance(other, DefinitionsGenerator):
@@ -737,16 +850,16 @@ class TableGenerator(PartsGenerator):
         self.children = children
 
     def parts(self):
-        yield RawGenerator("<table>")
+        yield MarkupGenerator("<table>")
         for cells in self.children:
             header = isinstance(cells, TableHeader)
-            yield RawGenerator("<tr>")
+            yield MarkupGenerator("<tr>")
             for cell in cells:
-                yield RawGenerator("<th>" if header else "<td>")
+                yield MarkupGenerator("<th>" if header else "<td>")
                 yield cell
-                yield RawGenerator("</th>" if header else "</td>")
-            yield RawGenerator("</tr>")
-        yield RawGenerator("</table>")
+                yield MarkupGenerator("</th>" if header else "</td>")
+            yield MarkupGenerator("</tr>")
+        yield MarkupGenerator("</table>")
 
     def merge(self, other):
         if isinstance(other, TableGenerator):
@@ -759,9 +872,9 @@ class ParagraphGenerator(WrapGenerator):
 
     def __init__(self, children, can_merge = False):
         self.can_merge = can_merge
-        super().__init__(RawGenerator("<p>"),
+        super().__init__(MarkupGenerator("<p>"),
                          TextGenerator("\n"),
-                         RawGenerator("</p>"),
+                         MarkupGenerator("</p>"),
                          children)
 
     def merge(self, other):
@@ -841,11 +954,14 @@ def prepare_documents(root, initial_documents):
         for name, doc in docmap.items():
             documents.add(doc)
         for name, depends_on in node_deps.items():
+            if name not in docmap:
+                continue
             if isinstance(depends_on, str):
                 depends_on = (depends_on,)
-            deps[docmap[name]] |= {docmap[x] for x in depends_on}
+            deps[docmap[name]] |= {docmap[x] for x in depends_on if x in docmap}
         for name, gen_fn in node_generators.items():
-            generators[docmap[name]].append((gen_fn, docmap))
+            if name in docmap:
+                generators[docmap[name]].append((gen_fn, docmap))
 
     for doc in documents:
         deps.setdefault(doc, set())
@@ -927,62 +1043,30 @@ def generate_html_file(documents):
         <title>
           {title}
         </title>
-        <style>
-          {style}
-        </style>
+        {style}
       </head>
       <body>
         <div class="main">
           {contents}
         </div>
-        <script>
-          {script}
-        </script>
+        {script}
         {errtext}
       </body>
     </html>
     """)
 
-    xlinks = []
-    for type, link in documents['xlinks'].data:
-        xlinks.append('<link rel={type} href="{link}">'.format(
-                type = type, link = link))
+    # xlinks = []
+    # for type, link in documents['xlinks'].data:
+    #     xlinks.append('<link rel={type} href="{link}">'.format(
+    #             type = type, link = link))
 
-    errors = documents['errors'].data
-    if errors:
-        errtext = ""
-        for i, (culprit, etype, error, tb) in enumerate(errors):
-            errsource = source(culprit)
-            tb = traceback.format_tb(tb)
-            errtext += """
-              <div class="err_report" id="__ERR_{i}">
-                <div class="err_source">
-                  <span class="err_num">E{i}</span>
-                  <div>{errsource}</div>
-                  <div>{loc}</div>
-                </div>
-                <div class="err_exception">
-                  <div class="err_type">{etype}</div>
-                  <div class="err_contents">{error}</div>
-                </div>
-                <div class="err_traceback">{tb}</div>
-              </div>
-              """.format(errsource = cgi.escape(errsource),
-                         loc = cgi.escape(str(culprit.location)),
-                         error = cgi.escape(str(error)),
-                         etype = cgi.escape(etype.__name__),
-                         tb = cgi.escape("".join(tb)),
-                         i = i + 1)
-        errtext = '<div class="err_reports">%s</div>' % errtext
-    else:
-        errtext = ""
 
-    return template.format(style = documents['css'].data,
+    return template.format(style = documents['css'].format_html(),
                            title = documents['meta'].get('title', 'Untitled'),
-                           xlinks = "\n".join(xlinks),
-                           script = documents['js'].data,
-                           contents = documents['main'].data,
-                           errtext = errtext)
+                           xlinks = documents['xlinks'].format_html(),
+                           script = documents['js'].format_html(),
+                           contents = documents['html'].format_html(),
+                           errtext = documents['errors'].format_html())
 
 
 def evaluate(x, engine, documents):

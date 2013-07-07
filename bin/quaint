@@ -4,7 +4,7 @@
 
 Usage:
   quaint (tok|ast) [FILE | -s STR]
-  quaint (eval|html) [FILE | -s STR] [--safe] [-x EXT]
+  quaint (eval|html) [FILE | -s STR] [--safe] [-x EXT] [-o OUT]
 
 Arguments:
   FILE          Source file.
@@ -13,6 +13,7 @@ Options:
   -h --help     Show this screen.
   -s STR        Use the provided string instead of a file.
   -x EXT        Comma-separated list of extensions to load.
+  -o OUT        Output the result in file OUT
   --safe        Do not allow arbitrary code execution in markup.
 """
 
@@ -97,7 +98,7 @@ def x_ast(s, path, args):
 def x_eval(s, path, args):
     ast = parse(Source(s, url = path))
     documents = make_documents('js', 'css', 'links', 'xlinks', 'sections', 'meta',
-                               main = engine.HTMLDocument())
+                               text = engine.TextDocument())
 
     if not args['--safe'] and (not path or path.endswith('.py.q')):
         eng = default_engine(engine.default_error_handler)
@@ -105,14 +106,25 @@ def x_eval(s, path, args):
         eng = safe_engine(engine.default_error_handler)
 
     evaluate(ast, eng, documents)
-    print("\x1B[?0;7y:h <div>" + documents['main'].data + "</div>\a")
+    print(documents['text'].data)
+    # print("\x1B[?0;7y:h <div>" + documents['text'].data + "</div>\a")
+
+# @needs_source
+# def x_eval(s, path, args):
+#     ast = parse(Source(s, url = path))
+#     documents = make_documents('js', 'css', 'links', 'xlinks', 'sections', 'meta',
+#                                html = engine.HTMLDocument())
+
+#     if not args['--safe'] and (not path or path.endswith('.py.q')):
+#         eng = default_engine(engine.default_error_handler)
+#     else:
+#         eng = safe_engine(engine.default_error_handler)
+
+#     evaluate(ast, eng, documents)
+#     print("\x1B[?0;7y:h <div>" + documents['html'].data + "</div>\a")
 
 @needs_source
 def x_html(s, path, args):
-
-    # def add_xlinks(engine, documents):
-    #     documents['xlinks'].add('stylesheet', 'style/main.css')
-    #     documents['xlinks'].add('stylesheet', 'style/pygments.css')
 
     if not args['--safe'] and (not path or path.endswith('.py.q')):
         eng = default_engine()
@@ -125,7 +137,11 @@ def x_html(s, path, args):
         ext = []
 
     html = full_html(Source(s, url = path), engine = eng, extensions = ext)
-    print(html)
+    if args['-o']:
+        file = open(args['-o'], "w")
+        print(html, file = file)
+    else:
+        print(html)
 
 
 

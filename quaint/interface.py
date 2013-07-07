@@ -6,19 +6,6 @@ from .engine import HTMLMetaNode, HTMLDocument, evaluate, collapse
 from . import ast, extensions
 
 
-# def extract_data(p):
-#     if ast.is_oper(p, ","):
-#         args = collapse(p, ",")
-#         return [extract_data(x) for x in args]
-#     else:
-#         mod = ""
-#         while ast.is_oper(p, ".", "_"):
-#             mod += source(p.args[0]) + p.operator
-#             p = p.args[1]
-#         if p
-        
-        
-
 
 def get_extension(ext):
 
@@ -26,11 +13,11 @@ def get_extension(ext):
         return ext
 
     if not isinstance(ext, str):
-        return ext
+        return (ext, None)
 
     try:
         pack = __import__(ext, fromlist = ["the interface to __import__ is weird"])
-        return getattr(pack, 'quaint_ext')
+        return (getattr(pack, 'quaint_ext'), None)
     except ImportError:
         pass
 
@@ -40,26 +27,26 @@ def get_extension(ext):
         fname = parts[-1]
         try:
             pack = __import__(packname, fromlist = ["the interface to __import__ is weird"])
-            return getattr(pack, fname)
+            return (getattr(pack, fname), None)
         except ImportError:
             pass
 
     try:
-        return getattr(extensions, ext)
+        return (getattr(extensions, ext), None)
     except AttributeError:
         raise Exception("Could not find extension '%s'" % ext)
 
 
 def full_html(source, extensions = [], engine = None):
     ptree = parse(source)
-    main = HTMLDocument()
-    documents = make_documents('js', 'css', 'links', 'xlinks', 'sections', 'meta',
-                               main = main)
+    documents = make_documents('html', 'js', 'css', 'links', 'xlinks', 'sections', 'meta')
     engine = engine or default_engine()
     for extension in extensions:
-        get_extension(extension)(engine, documents)
+        extension, options = get_extension(extension)
+        options = options or {}
+        extension(engine, documents, **options)
     evaluate(HTMLMetaNode(ptree), engine, documents)
-    return main.data
+    return documents['html'].data
 
 
 

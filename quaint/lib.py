@@ -14,6 +14,7 @@ from .engine import (
     Generator,
     GeneratorFor as GenFor,
     GeneratorFrom as GenFrom,
+    MarkupGenerator as Markup,
     RawGenerator as Raw,
     TextGenerator as Text,
     WSGenerator as GenWS,
@@ -66,7 +67,7 @@ def make_tags(tag, attributes, engine, args):
                 value = value.raw()
         opening_tag += ' %s="%s"' % (attr, value)
     opening_tag += ">"
-    return Raw(opening_tag), Raw("</%s>" % tag)
+    return Markup(opening_tag), Markup("</%s>" % tag)
 
 
 def parts_wrapper(w0, *wrappers):
@@ -172,7 +173,7 @@ def rawop(engine, node, **_):
 
 def indent(engine, node, i):
     contents = i.args
-    return Gen(Raw("<span>"), Gen(*map(engine, contents)), Raw("</span>"))
+    return Gen(Markup("<span>"), Gen(*map(engine, contents)), Markup("</span>"))
 
 def paragraph(engine, node, par):
     contents = [engine(x) for x in par.args]
@@ -268,19 +269,19 @@ def special_link(engine, node, text, type, link):
 def link(engine, node, text, link = None):
     if link is None or isinstance(link, ast.Void):
         link = text
-    return Gen(Raw('<a href="'),
+    return Gen(Markup('<a href="'),
                parse_link(plain_or_code(engine, link)),
-               Raw('">'),
+               Markup('">'),
                engine(text),
-               Raw('</a>'))
+               Markup('</a>'))
 
 @wrap_whitespace
 def anchor(engine, node, text, label):
     label = label.raw()
     return Gen(GenFor('links', label, '#' + label),
-               Raw('<span id="{label}">'.format(label = label)),
+               Markup('<span id="{label}">'.format(label = label)),
                engine(text),
-               Raw('</span>'))
+               Markup('</span>'))
 
 
 
@@ -314,19 +315,19 @@ def ignore(engine, node, x):
 def code(engine, node, lang, code):
     # inline code snippets
     code = extract_and_codehl(lang, code, False, True)
-    return Gen(Raw('<span class="code code_inline"><code>'),
+    return Gen(Markup('<span class="code code_inline"><code>'),
                # Note: pygments' HTMLFormatter puts a line break at
                # the end of the generated code. That line break
                # produces whitespace we might not want, so we remove
                # it.
                Raw(code[:-1] if code.endswith("\n") else code),
-               Raw('</code></span>'))
+               Markup('</code></span>'))
 
 def code_block(engine, node, lang, code):
     # blocks of code
-    return Gen(Raw('<div class="code code_block"><pre>'),
+    return Gen(Markup('<div class="code code_block"><pre>'),
                Raw(extract_and_codehl(lang, code, True, False)),
-               Raw('</pre></div>'))
+               Markup('</pre></div>'))
 
 def show_and_run(engine, node, code):
     return Gen(code_block(engine, node, "quaint", code),
@@ -347,11 +348,11 @@ def header_n(n):
         title = title.raw()
         anchor = format_anchor(title)
         return Gen(GenFor('links', anchor, '#'+anchor),
-                   Raw('<h%s id="' % n),
+                   Markup('<h%s id="' % n),
                    Text(anchor),
-                   Raw('">'),
+                   Markup('">'),
                    Section(anchor, engine(title), n),
-                   Raw("</h%s>" % n))
+                   Markup("</h%s>" % n))
     return header
 
 header1 = header_n(1)
@@ -601,4 +602,6 @@ def show_args(engine, node, **params):
 def include(engine, node, file):
     return engine(parse(open(source_nows(file)).read()))
 
+def insert_document(engine, node, docname):
+    return GenFrom(source_nows(docname), lambda doc: doc.format_html())
 

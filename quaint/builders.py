@@ -161,13 +161,14 @@ def safe_engine(error_handler = mod_engine.inline_error_handler,
 
 
 document_types = dict(
-    css = mod_engine.TextDocument,
-    js = mod_engine.TextDocument,
+    html = mod_engine.HTMLDocument,
+    css = mod_engine.CSSDocument,
+    js = mod_engine.JSDocument,
     links = mod_engine.RepoDocument,
-    xlinks = mod_engine.SetDocument,
+    xlinks = mod_engine.XLinksDocument,
     sections = mod_engine.SectionsDocument,
     meta = mod_engine.RepoDocument,
-    errors = mod_engine.ListDocument,
+    errors = mod_engine.ErrorsDocument,
     )
 
 
