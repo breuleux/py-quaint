@@ -669,15 +669,17 @@ class ListGenerator(PartsGenerator):
             if type is None: type = "1"
             if start is None: start = 1
             otag = '<ol type="{type}" start="{start}">'.format(type=type, start=start)
+            ctag = '</ol>'
         else:
             otag = "<ul>"
+            ctag = "</ul>"
 
         yield RawGenerator(otag)
         for child in self.children:
             yield RawGenerator("<li>")
             yield child
             yield RawGenerator("</li>")
-        yield RawGenerator("</ol>" if self.ordered else "</ul>")
+        yield RawGenerator(ctag)
 
     def merge(self, other):
         if isinstance(other, ListGenerator):
@@ -694,13 +696,6 @@ class ListGenerator(PartsGenerator):
                                  ordered = (o1, type1 or type2, start1))
         else:
             return None
-
-    # def merge(self, other):
-    #     if isinstance(other, ListGenerator) and self.ordered == other.ordered:
-    #         return ListGenerator(*(self.children + other.children),
-    #                              ordered = self.ordered)
-    #     else:
-    #         return None
 
 
 class DefinitionsGenerator(PartsGenerator):

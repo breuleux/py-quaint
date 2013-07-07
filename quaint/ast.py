@@ -115,12 +115,12 @@ class Nullary(ASTNode):
 def is_void(node):
     return isinstance(node, Void)
 
-def is_oper(node, op = None):
+def is_oper(node, *ops):
     if isinstance(node, Op):
-        if op is None:
+        if not ops:
             return True
         else:
-            return node.operator == op
+            return any(node.operator == op for op in ops)
     else:
         return False
 

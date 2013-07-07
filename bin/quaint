@@ -4,7 +4,7 @@
 
 Usage:
   quaint (tok|ast) [FILE | -s STR]
-  quaint (eval|html) [FILE | -s STR] [--safe]
+  quaint (eval|html) [FILE | -s STR] [--safe] [-x EXT]
 
 Arguments:
   FILE          Source file.
@@ -12,6 +12,7 @@ Arguments:
 Options:
   -h --help     Show this screen.
   -s STR        Use the provided string instead of a file.
+  -x EXT        Comma-separated list of extensions to load.
   --safe        Do not allow arbitrary code execution in markup.
 """
 
@@ -26,6 +27,7 @@ from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
 from quaint.engine import evaluate
 from quaint.builders import default_engine, safe_engine, make_documents
+from quaint.interface import full_html
 
 from ug.format import errors
 from quaint.displayrules import ugdescr, rules
@@ -108,22 +110,44 @@ def x_eval(s, path, args):
 @needs_source
 def x_html(s, path, args):
 
-    ast = parse(Source(s, url = path))
-
-    documents = {'xlinks': engine.SetDocument(),
-                 'main': engine.HTMLDocument()}
-    documents['xlinks'].add('stylesheet', 'style/main.css')
-    documents['xlinks'].add('stylesheet', 'style/pygments.css')
+    # def add_xlinks(engine, documents):
+    #     documents['xlinks'].add('stylesheet', 'style/main.css')
+    #     documents['xlinks'].add('stylesheet', 'style/pygments.css')
 
     if not args['--safe'] and (not path or path.endswith('.py.q')):
         eng = default_engine()
     else:
         eng = safe_engine()
 
-    evaluate(engine.HTMLMetaNode(ast), eng, documents)
+    if args['-x']:
+        ext = args['-x'].split(",")
+    else:
+        ext = []
 
-    html = documents['main'].data
+    html = full_html(Source(s, url = path), engine = eng, extensions = ext)
     print(html)
+
+
+
+# @needs_source
+# def x_html(s, path, args):
+
+#     ast = parse(Source(s, url = path))
+
+#     documents = {'xlinks': engine.SetDocument(),
+#                  'main': engine.HTMLDocument()}
+#     documents['xlinks'].add('stylesheet', 'style/main.css')
+#     documents['xlinks'].add('stylesheet', 'style/pygments.css')
+
+#     if not args['--safe'] and (not path or path.endswith('.py.q')):
+#         eng = default_engine()
+#     else:
+#         eng = safe_engine()
+
+#     evaluate(engine.HTMLMetaNode(ast), eng, documents)
+
+#     html = documents['main'].data
+#     print(html)
 
 
 
