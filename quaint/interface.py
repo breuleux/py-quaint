@@ -1,10 +1,32 @@
 
 # from .operparse import Source
 from .parser import parse
-from .builders import make_documents, default_engine
-from .engine import HTMLMetaNode, HTMLDocument, evaluate, collapse
-from . import ast, extensions
+from .builders import (
+    AddDocumentsMetaNode,
+    make_documents, default_engine
+    )
+from .engine import (
+    TemplateMetaNode, HTMLDocument, evaluate, collapse
+    )
+from . import ast, extensions, builders, engine as mod_engine
 
+
+fullhtml_template = """
+html ..
+
+  head ..
+    meta [http-equiv = Content-type] [content = [text/html; charset=UTF-8]] ..
+    {insert_document}: xlinks
+    title ..
+      {meta}: title
+    {insert_document}: css
+
+  body ..
+    {insert_document}: js
+    div .main ..
+      {insert_document}: main
+    {insert_document}: errors
+"""
 
 
 def get_extension(ext):
@@ -37,16 +59,42 @@ def get_extension(ext):
         raise Exception("Could not find extension '%s'" % ext)
 
 
-def full_html(source, extensions = [], engine = None):
-    ptree = parse(source)
-    documents = make_documents('html', 'js', 'css', 'links', 'xlinks', 'sections', 'meta')
-    engine = engine or default_engine()
+def apply_extensions(engine, documents, extensions):
     for extension in extensions:
         extension, options = get_extension(extension)
         options = options or {}
         extension(engine, documents, **options)
-    evaluate(HTMLMetaNode(ptree), engine, documents)
+
+
+def full_html(source, extensions = [], engine = None, template = None):
+    if isinstance(source, ast.AST):
+        ptree = source
+    else:
+        ptree = parse(source)
+
+    if template is None:
+        template = fullhtml_template
+    if isinstance(template, ast.AST):
+        tptree = template
+    else:
+        tptree = parse(template)
+
+    documents = make_documents('html')
+
+    # documents = make_documents('html', 'js', 'css',
+    #                            'links', 'xlinks',
+    #                            'sections', 'meta',
+    #                            'errors')
+    engine = engine or default_engine()
+    apply_extensions(engine, documents, extensions)
+    evaluate(AddDocumentsMetaNode(TemplateMetaNode(tptree, ptree),
+                                  'js', 'css', 'links', 'xlinks', 'sections',
+                                  'meta', 'errors'),
+             engine, documents)
     return documents['html'].data
+
+
+
 
 
 

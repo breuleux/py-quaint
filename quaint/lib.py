@@ -33,9 +33,13 @@ except ImportError:
 
 def wrap_whitespace(f):
     def f2(engine, node, *args, **kwargs):
-        return Gen(Text(node.whitespace_left),
-                   f(engine, node, *args, **kwargs),
+        result = f(engine, node, *args, **kwargs)
+        rval = Gen(Text(node.whitespace_left),
+                   result,
                    Text(node.whitespace_right))
+        if hasattr(result, 'block'):
+            rval.block = result.block
+        return rval
     f2.__name__ = f.__name__
     return f2
 
@@ -58,7 +62,8 @@ def make_tags(tag, attributes, engine, args):
                 value = f(engine, value)
             else:
                 value = value.raw()
-        opening_tag += ' %s="%s"' % (attr, value)
+        if value:
+            opening_tag += ' %s="%s"' % (attr, value)
     opening_tag += ">"
     return Markup(opening_tag), Markup("</%s>" % tag)
 
@@ -166,7 +171,8 @@ def rawop(engine, node, **_):
 
 def indent(engine, node, i):
     contents = i.args
-    return Gen(Markup("<span>"), Gen(*map(engine, contents)), Markup("</span>"))
+    # return Gen(Markup("<span>"), Gen(*map(engine, contents)), Markup("</span>"))
+    return Gen(*map(engine, contents))
 
 def paragraph(engine, node, par):
     contents = [engine(x) for x in par.args]
@@ -183,7 +189,10 @@ def blocks(engine, node, pars):
     #
     #   line 3
     # There might be better ways to resolve that idiosyncracy.
-    contents = contents[:1] + [x if hasattr(x, 'merge') else Paragraph([x])
+    contents = contents[:1] + [x if (hasattr(x, 'merge')
+                                     or (hasattr(x, 'block')
+                                         and x.block))
+                               else Paragraph([x])
                                for x in contents[1:]]
     return AutoMerge(contents)
 
@@ -335,6 +344,7 @@ def show_as_and_run(lang):
 
 
 def header_n(n):
+    @wrap_whitespace
     def header(engine, node, title = None):
         if title is None:
             title, _ = node.args
@@ -342,7 +352,7 @@ def header_n(n):
         anchor = format_anchor(title)
         return Gen(GenFor('links', anchor, '#'+anchor),
                    Markup('<h%s id="' % n),
-                   Text(anchor),
+                   Markup(anchor),
                    Markup('">'),
                    Section(anchor, engine(title), n),
                    Markup("</h%s>" % n))
@@ -432,13 +442,13 @@ def extract_props(node, results):
 
     elif ast.is_oper(node, '.'):
         assert(ast.is_void(node.args[0]))
-        assert(isinstance(node.args[1], str))
-        results['class'].add(node.args[1])
+        assert(isinstance(node.args[1], str) or ast.is_oper(node.args[1], '_', '-'))
+        results['class'].add(source_nows(node.args[1]))
 
     elif ast.is_oper(node, '#'):
         assert(ast.is_void(node.args[0]))
-        assert(isinstance(node.args[1], str))
-        results['id'] = node.args[1]
+        assert(isinstance(node.args[1], str) or ast.is_oper(node.args[1], '_', '-'))
+        results['id'] = source_nows(node.args[1])
 
     elif ast.is_oper(node, '='):
         results[source_nows(node.args[0])] = source_nows(node.args[1])
@@ -455,13 +465,14 @@ def extract_props(node, results):
 @wrap_whitespace
 def domnode(engine, node, tag, body):
     props = extract_props(tag, {'tag': 'div', 'class': set()})
-    otag, ctag = make_tags(props.pop('tag'), props, engine, [])
+    tagname = props.pop('tag')
+    otag, ctag = make_tags(tagname, props, engine, [])
     result = Gen(otag, engine(body), ctag)
     if 'id' in props:
-        return Gen(GenFor('links', props['id'], '#'+props['id']), result)
-    else:
-        return result
-
+        result = Gen(GenFor('links', props['id'], '#'+props['id']), result)
+    if tagname != 'span':
+        result.block = True
+    return result
     
 
 
@@ -570,7 +581,7 @@ def meta(engine, node, defs):
     if (isinstance(defs, str)
         or (isinstance(defs, ast.Op) and not defs.operator)):
         key = defs.raw()
-        return GenFrom('meta', lambda doc: str(doc[key]))
+        return GenFrom('meta', lambda doc: str(doc.get(key, "???")))
 
     else:
         return grabdefs(engine, defs)

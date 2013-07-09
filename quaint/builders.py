@@ -90,7 +90,7 @@ default_bindings = bare_bindings + [
     ('wide [| row]', 'table_row'),
 
     # Others
-    ('tag .. body', 'domnode'),
+    ('tag .. maybe body', 'domnode'),
     ('wide [maybe source >> quote]', 'quote'),
     (';; x', 'ignore'),
     ('name <- body', 'setvar'),
@@ -142,6 +142,7 @@ table_header table_row
 domnode quote ignore setvar load_in_var
 toc
 meta html css json yaml show_args include
+insert_document
 """.split()
 
     env = {}
@@ -179,6 +180,16 @@ def make_documents(*names, **others):
     docs.update(others)
     return docs
 
+def complete_documents(docs, *names, **others):
+    docs = dir(docs)
+    for name in names:
+        if name not in docs:
+            docs[name] = document_types[name]()
+    for k, v in others.items():
+        if k not in docs:
+            docs[k] = v()
+    return docs
+
 
 
 # def html_documents():
@@ -195,4 +206,69 @@ def make_documents(*names, **others):
 #         }
 
 #     return documents
+
+
+
+class AddDocumentsMetaNode(mod_engine.MetaNode):
+    def process(self, engine, node, *docnames):
+        return AddDocuments(engine(node), *docnames)
+
+
+class AddDocuments(mod_engine.Generator):
+
+    def __init__(self, gen, *docnames):
+        self.docnames = docnames
+        self.gen = gen
+
+    def docmaps(self, current):
+        current = complete_documents(current, *self.docnames)
+        print(current)
+        results = [(current, self, self.deps(), self.generators())]
+        results += self.element.docmaps(current)
+        return results
+
+
+
+class MultiMetaNode(mod_engine.MetaNode):
+    def process(self, engine, docs, nodes):
+        return MultiDocumentGenerator(
+            docs,
+            [(name, engine(node))
+             for name, node in nodes])
+
+class MultiDocumentGenerator(mod_engine.Generator):
+
+    def __init__(self, docnames, gens):
+        self.docnames = set(docnames)
+        self.gens = gens
+
+    def docmaps(self, current):
+        mydocs = dict(current)
+        mydocs['files'] = RepoDocument()
+        mydocs['globalinfo'] = RepoDocument()
+        rval = [(mydocs, self, self.deps(), self.generators())]
+        for name, gen in self.gens:
+            subdocs = make_documents('html', *self.docnames)
+            rval += gen.docmaps(subdocs)
+            for docname, doc in subdocs.items():
+                docs['_' + docname + '_' + name] = doc
+        return rval
+
+    def deps(self):
+        return {'globalinfo': {'_' + docname + '_' + name
+                               for docname in self.docnames
+                               for name, _ in self.gens},
+                'files': {'_html_' + name for name, _ in self.gens}}
+
+    def generate_globalinfo(self, docs):
+        dest = docs['globalinfo']
+        for name, gen in self.gens:
+            dest[name] = {}
+            for docname in self.docnames:
+                dest[name][docname] = docs['_' + docname + '_' + name]
+
+    def generate_files(self, docs):
+        dest = docs['files']
+        for name, gen in self.gens:
+            dest[name] = docs['_html_' + name]
 

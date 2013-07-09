@@ -138,12 +138,12 @@ def inline_error_handler(engine, ptree, exc):
     text = source_nows(ptree)
     return Gen(GenFor('errors', ptree, etype, e, tb),
                Raw(ptree.whitespace_left),
-               Raw('<span class="error">'),
+               Markup('<span class="error">'),
                Text(text),
-               Raw('</span>'),
-               Raw('<sup>'),
+               Markup('</span>'),
+               Markup('<sup>'),
                GenFrom('errors', find),
-               Raw('</sup>'),
+               Markup('</sup>'),
                Raw(ptree.whitespace_right))
 
 
@@ -319,6 +319,7 @@ class CSSDocument(TextDocument):
 
 class JSDocument(TextDocument):
     def format_html(self):
+        print(self.data)
         return "<script>%s</script>" % self.data
 
 class XLinksDocument(SetDocument):
@@ -442,100 +443,50 @@ def fork_doc(docs, docname, gen):
     else:
         return gen()
 
+    
 
 
-class ProxyMetaNode(MetaNode):
-    def process(self, engine, proxy, **nodes):
-        engine = engine.clone()
-        engine.environment.update(nodes)
-        return engine(proxy)
+
+# class ProxyMetaNode(MetaNode):
+#     def process(self, engine, proxy, **nodes):
+#         engine = engine.clone()
+#         engine.environment.update(nodes)
+#         return engine(proxy)
 
 
-class HTMLMetaNode(MetaNode):
-    def process(self, engine, node):
-        return HTMLDocumentGenerator(engine(node))
+# class FullHTMLMetaNode(MetaNode):
+#     def process(self, engine, node):
+#         return FullHTMLGenerator(engine(node))
 
-class HTMLDocumentGenerator(Generator):
-
-    def __init__(self, gen):
-        self.gen = gen
-
-    def docmaps(self, current):
-        for (doc, type) in [('html', HTMLDocument),
-                            ('_sub_html', HTMLDocument),
-                            ('css', CSSDocument),
-                            ('js', JSDocument),
-                            ('links', RepoDocument),
-                            ('xlinks', XLinksDocument),
-                            ('meta', RepoDocument),
-                            ('sections', SectionsDocument),
-                            ('errors', ErrorsDocument)]:
-            if doc not in current:
-                current[doc] = type()
-
-        subd = dict(current, html = current['_sub_html'])
-        return ([(current, self, self.deps(), self.generators())]
-                + self.gen.docmaps(subd))
-
-    def deps(self):
-        subdocs = set('_sub_html css js links xlinks meta sections errors'.split())
-        return {'html': subdocs}
-
-    def generate_html(self, docs):
-        unmangled_docs = dict(docs, html = docs['_sub_html'])
-        docs['html'].add(generate_html_file(unmangled_docs))
-
-# class HTMLDocumentGenerator(Generator):
+# class FullHTMLGenerator(Generator):
 
 #     def __init__(self, gen):
 #         self.gen = gen
 
 #     def docmaps(self, current):
+#         for (doc, type) in [('html', HTMLDocument),
+#                             ('_sub_html', HTMLDocument),
+#                             ('css', CSSDocument),
+#                             ('js', JSDocument),
+#                             ('links', RepoDocument),
+#                             ('xlinks', XLinksDocument),
+#                             ('meta', RepoDocument),
+#                             ('sections', SectionsDocument),
+#                             ('errors', ErrorsDocument)]:
+#             if doc not in current:
+#                 current[doc] = type()
 
-#         new_documents = dict(
-#             main = fork_doc(current, 'main', HTMLDocument),
-#             css = fork_doc(current, 'css', TextDocument),
-#             js = fork_doc(current, 'js', TextDocument),
-#             links = fork_doc(current, 'links', RepoDocument),
-#             xlinks = fork_doc(current, 'xlinks', SetDocument),
-#             meta = fork_doc(current, 'meta', RepoDocument),
-#             sections = SectionsDocument(),
-#             errors = ListDocument())
-
-#         new = dict(current, **new_documents)
-#         current = dict(current, **{'_sub_' + k: v
-#                                    for k, v in new_documents.items()})
-
+#         subd = dict(current, html = current['_sub_html'])
 #         return ([(current, self, self.deps(), self.generators())]
-#                 + self.gen.docmaps(new))
+#                 + self.gen.docmaps(subd))
 
 #     def deps(self):
-#         subdocs = {'_sub_' + x for x in
-#                    'main css js links xlinks meta sections errors'.split()}
-#         return {'main': subdocs}
+#         subdocs = set('_sub_html css js links xlinks meta sections errors'.split())
+#         return {'html': subdocs}
 
-#     def generate_main(self, docs):
-#         unmangled_docs = {k[5:]: v
-#                           for k, v in docs.items() if k.startswith('_sub_')}
-#         docs['main'].add(generate_html_file(unmangled_docs))
-
-# class MultiMetaNode(MetaNode):
-#     def process(self, engine, docs, nodes):
-#         return MultiDocumentGenerator(docs,
-#                                       [(name, engine(node))
-#                                        for name, node in nodes])
-
-# class MultiDocumentGenerator(Generator):
-
-#     def __init__(self, docnames, gens):
-#         self.docnames = docnames
-#         self.gens = gens
-
-#     def generate_globalinfo(self, docs):
-#         dest = docs['globalinfo']
-#         for name, gen in self.gens:
-#             d = docs['_doc_' + name]
-#             for 
+#     def generate_html(self, docs):
+#         unmangled_docs = dict(docs, html = docs['_sub_html'])
+#         docs['html'].add(generate_html_file(unmangled_docs))
 
 
 
@@ -564,6 +515,12 @@ class Raw(Generator):
     def generate_text(self, docs):
         docs['text'].add(self.text)
 
+    def __str__(self):
+        return 'Raw(%s)' % self.text
+
+    def __repr__(self):
+        return str(self)
+
 
 class Markup(Generator):
 
@@ -572,6 +529,12 @@ class Markup(Generator):
 
     def generate_html(self, docs):
         docs['html'].add(self.text)
+
+    def __str__(self):
+        return 'Markup(%s)' % self.text
+
+    def __repr__(self):
+        return str(self)
 
 
 class Text(Generator):
@@ -591,6 +554,12 @@ class Text(Generator):
 
     def generate_html(self, docs):
         docs['html'].add(cgi.escape(self.text))
+
+    def __str__(self):
+        return 'Text(%s)' % self.text
+
+    def __repr__(self):
+        return str(self)
 
 
 class ProxyGenerator(Generator):
@@ -627,24 +596,34 @@ class Gen(PartsGenerator):
     def parts(self):
         return self.children
 
+    def __str__(self):
+        return "Gen(%s)" % ', '.join(map(str, self.children))
+
+    def __repr__(self):
+        return str(self)
+
 
 class RedirectGenerator(Generator):
 
-    def __init__(self, gen):
+    def __init__(self, tempname, gen, *others):
+        self.tempname = tempname
         self.gen = gen
+        self.others = others
 
     def docmaps(self, current):
         doc = HTMLDocument()
         mydocs = dict(current)
-        mydocs['redirect'] = doc
+        mydocs[self.tempname] = doc
         subdocs = dict(current)
         subdocs['html'] = doc
         results = [(mydocs, self, self.deps(), self.generators())]
         results += self.gen.docmaps(subdocs)
+        for other in self.others:
+            results += other.docmaps(mydocs)
         return results
 
     def deps(self):
-        return {'html': 'redirect'}
+        return {'html': self.tempname}
 
 
 class Section(RedirectGenerator):
@@ -652,17 +631,32 @@ class Section(RedirectGenerator):
     def __init__(self, section_name, contents, level):
         self.section_name = section_name
         self.level = level
-        super().__init__(contents)
+        super().__init__('redirect', contents)
 
     def deps(self):
-        return {'sections': 'redirect',
-                'html': 'redirect'}
+        return {'sections': self.tempname,
+                'html': self.tempname}
 
     def generate_sections(self, docs):
-        docs['sections'].add(self.section_name, docs['redirect'], self.level)
+        docs['sections'].add(self.section_name, docs[self.tempname], self.level)
 
     def generate_html(self, docs):
-        docs['html'].add(docs['redirect'].data)
+        docs['html'].add(docs[self.tempname].format_html())
+
+
+
+class TemplateMetaNode(MetaNode):
+    def process(self, engine, template, main):
+        main = engine(main)
+        template = engine(template)
+        return Template(template, main)
+
+
+class Template(RedirectGenerator):
+    def __init__(self, template, main):
+        super().__init__('main', main, template)
+
+
 
 
 class TOCGenerator(Generator):
