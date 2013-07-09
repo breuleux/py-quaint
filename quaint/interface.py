@@ -3,6 +3,7 @@
 from .parser import parse
 from .builders import (
     AddDocumentsMetaNode,
+    HTMLMetaNode,
     make_documents, default_engine
     )
 from .engine import (
@@ -59,11 +60,11 @@ def get_extension(ext):
         raise Exception("Could not find extension '%s'" % ext)
 
 
-def apply_extensions(engine, documents, extensions):
+def apply_extensions(engine, extensions):
     for extension in extensions:
         extension, options = get_extension(extension)
         options = options or {}
-        extension(engine, documents, **options)
+        extension(engine, **options)
 
 
 def full_html(source, extensions = [], engine = None, template = None):
@@ -80,16 +81,16 @@ def full_html(source, extensions = [], engine = None, template = None):
         tptree = parse(template)
 
     documents = make_documents('html')
+    htdocs = ('js', 'css', 'links', 'xlinks', 'sections',
+              'meta', 'errors')
 
     # documents = make_documents('html', 'js', 'css',
     #                            'links', 'xlinks',
     #                            'sections', 'meta',
     #                            'errors')
     engine = engine or default_engine()
-    apply_extensions(engine, documents, extensions)
-    evaluate(AddDocumentsMetaNode(TemplateMetaNode(tptree, ptree),
-                                  'js', 'css', 'links', 'xlinks', 'sections',
-                                  'meta', 'errors'),
+    apply_extensions(engine, extensions)
+    evaluate(AddDocumentsMetaNode(HTMLMetaNode(TemplateMetaNode(tptree, ptree)), *htdocs),
              engine, documents)
     return documents['html'].data
 

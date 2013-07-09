@@ -3,6 +3,7 @@ import sys
 import re
 import traceback
 import cgi
+import weakref
 from . import ast
 from .parser import parse, all_op, rx_choice, whitespace_re
 from .operparse import Source
@@ -157,6 +158,57 @@ class MetaNode:
         return self.process(engine, *self.args, **self.kwargs)
 
 
+def make_rule(pattern):
+
+    first_character = True
+
+    if isinstance(pattern, str):
+        pattern = create_pattern(parse(pattern), [])
+
+    if isinstance(pattern, tuple) or isinstance(pattern, type):
+        def p(ptree):
+            return match_pattern(pattern, ptree)
+        if isinstance(pattern, tuple):
+            head = pattern[0]
+            if isinstance(head, tuple):
+                head = head[0]
+            if isinstance(head, tuple):
+                # it needs to be done twice for operators that are
+                # tuples e.g. ('(', ')')
+                head = head[0]
+            if isinstance(head, str):
+                first_character = head and head[0]
+        elif isinstance(pattern, type):
+            first_character = pattern
+    else:
+        p = pattern
+
+    if not hasattr(p, 'first_character'):
+        p.first_character = first_character
+
+    return p
+
+
+
+
+class Once:
+
+    def __init__(self, predicate):
+        self.predicate = make_rule(predicate)
+        self.first_character = self.predicate.first_character
+        self.seen = weakref.WeakSet()
+
+    def __call__(self, node):
+        if node in self.seen:
+            return None
+        self.seen.add(node)
+        result = self.predicate(node)
+        if isinstance(result, dict):
+            return result
+        else:
+            return None
+
+
 def firstchar(ptree):
     if isinstance(ptree, ast.Op):
         oper = ptree.operator
@@ -177,11 +229,6 @@ class Engine:
 
     def match(self, ptree):
 
-        # if isinstance(ptree, ast.Op):
-        #     candidates = self.ctors.get(ptree.operator and ptree.operator[0], [])
-        # else:
-        #     candidates = []
-
         candidates = self.ctors.get(firstchar(ptree), [])
 
         for c in ptree.__class__.__mro__:
@@ -196,27 +243,31 @@ class Engine:
 
     def register(self, pattern, function, first_character = True):
 
-        if isinstance(pattern, str):
-            pattern = create_pattern(parse(pattern), [])
+        # if isinstance(pattern, str):
+        #     pattern = create_pattern(parse(pattern), [])
 
-        if isinstance(pattern, tuple) or isinstance(pattern, type):
-            def p(ptree):
-                return match_pattern(pattern, ptree)
-            if isinstance(pattern, tuple):
-                head = pattern[0]
-                if isinstance(head, tuple):
-                    head = head[0]
-                if isinstance(head, tuple):
-                    # yes, it needs to be done twice
-                    head = head[0]
-                if isinstance(head, str):
-                    first_character = head and head[0]
-            elif isinstance(pattern, type):
-                first_character = pattern
-        else:
-            p = pattern
+        # if isinstance(pattern, tuple) or isinstance(pattern, type):
+        #     def p(ptree):
+        #         return match_pattern(pattern, ptree)
+        #     if isinstance(pattern, tuple):
+        #         head = pattern[0]
+        #         if isinstance(head, tuple):
+        #             head = head[0]
+        #         if isinstance(head, tuple):
+        #             # it needs to be done twice for operators that are
+        #             # tuples e.g. ('(', ')')
+        #             head = head[0]
+        #         if isinstance(head, str):
+        #             first_character = head and head[0]
+        #     elif isinstance(pattern, type):
+        #         first_character = pattern
+        # else:
+        #     p = pattern
 
-        self.ctors[first_character].insert(0, (p, function))
+        p = make_rule(pattern)
+        if p.first_character is True:
+            p.first_character = first_character
+        self.ctors[p.first_character].insert(0, (p, function))
 
     def extend_environment(self, **ext):
         self.environment.update(ext)
@@ -319,7 +370,6 @@ class CSSDocument(TextDocument):
 
 class JSDocument(TextDocument):
     def format_html(self):
-        print(self.data)
         return "<script>%s</script>" % self.data
 
 class XLinksDocument(SetDocument):

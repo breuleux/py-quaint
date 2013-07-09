@@ -181,7 +181,7 @@ def make_documents(*names, **others):
     return docs
 
 def complete_documents(docs, *names, **others):
-    docs = dir(docs)
+    docs = dict(docs)
     for name in names:
         if name not in docs:
             docs[name] = document_types[name]()
@@ -222,10 +222,21 @@ class AddDocuments(mod_engine.Generator):
 
     def docmaps(self, current):
         current = complete_documents(current, *self.docnames)
-        print(current)
         results = [(current, self, self.deps(), self.generators())]
-        results += self.element.docmaps(current)
+        results += self.gen.docmaps(current)
         return results
+
+
+# class HTMLDocumentsMetaNode(AddDocumentsMetaNode):
+#     __docnames__ = ('js', 'css', 'links', 'xlinks', 'sections',
+#                     'meta', 'errors')
+#     def process(self, engine, node):
+#         return super().process(engine, node, *self.__docnames__)
+
+class HTMLMetaNode(mod_engine.MetaNode):
+    def process(self, engine, node):
+        return engine(node)
+
 
 
 
