@@ -3,7 +3,7 @@
 from .parser import parse
 from .builders import (
     AddDocumentsMetaNode,
-    HTMLMetaNode,
+    HTMLMetaNode, MultiMetaNode,
     make_documents, default_engine
     )
 from .engine import (
@@ -12,7 +12,7 @@ from .engine import (
 from . import ast, extensions, builders, engine as mod_engine
 
 
-fullhtml_template = """
+__fullhtml_template_text = """
 html ..
 
   head ..
@@ -28,6 +28,16 @@ html ..
       {insert_document}: main
     {insert_document}: errors
 """
+
+__fullhtml_template = None
+
+
+
+def fullhtml_template():
+    global __fullhtml_template
+    if __fullhtml_template is None:
+        __fullhtml_template = parse(__fullhtml_template_text)
+    return __fullhtml_template
 
 
 def get_extension(ext):
@@ -67,33 +77,49 @@ def apply_extensions(engine, extensions):
         extension(engine, **options)
 
 
-def full_html(source, extensions = [], engine = None, template = None):
+def make_source(source):
     if isinstance(source, ast.AST):
         ptree = source
     else:
         ptree = parse(source)
+    return ptree
 
-    if template is None:
-        template = fullhtml_template
-    if isinstance(template, ast.AST):
-        tptree = template
-    else:
-        tptree = parse(template)
-
-    documents = make_documents('html')
-    htdocs = ('js', 'css', 'links', 'xlinks', 'sections',
-              'meta', 'errors')
-
-    # documents = make_documents('html', 'js', 'css',
-    #                            'links', 'xlinks',
-    #                            'sections', 'meta',
-    #                            'errors')
+def make_engine(engine, extensions):
     engine = engine or default_engine()
     apply_extensions(engine, extensions)
-    evaluate(AddDocumentsMetaNode(HTMLMetaNode(TemplateMetaNode(tptree, ptree)), *htdocs),
-             engine, documents)
-    return documents['html'].data
+    return engine
 
+
+htdocs = ('js', 'css', 'links', 'xlinks', 'sections',
+          'meta', 'errors')
+
+def full_html(source, extensions = [], engine = None, template = None):
+    files = site([('result', source, template)], extensions, engine)
+    return files['result'].data
+
+    # ptree = make_source(source)
+    # tptree = make_source(template or fullhtml_template())
+
+    # documents = make_documents('html')
+
+    # evaluate(AddDocumentsMetaNode(HTMLMetaNode(TemplateMetaNode(tptree, ptree)), *htdocs),
+    #          make_engine(engine, extensions), documents)
+    # return documents['html'].data
+
+
+def site(sources, extensions = [], engine = None):
+    nodes = []
+    for name, source, template in sources:
+        ptree = make_source(source)
+        tptree = make_source(template or fullhtml_template())
+        node = AddDocumentsMetaNode(HTMLMetaNode(TemplateMetaNode(tptree, ptree)),
+                                    *htdocs)
+        nodes.append((name, node))
+    documents = make_documents('files', 'globalinfo')
+    node = MultiMetaNode(('meta', 'sections'), nodes)
+
+    evaluate(node, make_engine(engine, extensions), documents)
+    return documents['files'].data
 
 
 

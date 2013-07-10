@@ -565,7 +565,7 @@ def grabdefs(engine, x):
             return GenFor('meta', key.raw().lower(), value)
         elif x.operator in ('P', 'B', 'I'):
             return Gen(*[grabdefs(engine, arg) for arg in x.args])
-        elif is_square_bracket(x):
+        elif ast.is_square_bracket(x):
             return grabdefs(engine, x.args[1])
         else:
             raise Exception("?!?")

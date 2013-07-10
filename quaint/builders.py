@@ -170,6 +170,8 @@ document_types = dict(
     sections = mod_engine.SectionsDocument,
     meta = mod_engine.RepoDocument,
     errors = mod_engine.ErrorsDocument,
+    files = mod_engine.RepoDocument,
+    globalinfo = mod_engine.RepoDocument,
     )
 
 
@@ -255,14 +257,17 @@ class MultiDocumentGenerator(mod_engine.Generator):
 
     def docmaps(self, current):
         mydocs = dict(current)
-        mydocs['files'] = RepoDocument()
-        mydocs['globalinfo'] = RepoDocument()
+        # mydocs['files'] = RepoDocument()
+        # mydocs['globalinfo'] = RepoDocument()
         rval = [(mydocs, self, self.deps(), self.generators())]
         for name, gen in self.gens:
-            subdocs = make_documents('html', *self.docnames)
+            subdocs = dict(current)
+            subdocs.update(make_documents('html', *self.docnames))
+            if 'meta' in self.docnames:
+                subdocs['meta']['path'] = name
             rval += gen.docmaps(subdocs)
             for docname, doc in subdocs.items():
-                docs['_' + docname + '_' + name] = doc
+                mydocs['_' + docname + '_' + name] = doc
         return rval
 
     def deps(self):
