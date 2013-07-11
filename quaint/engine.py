@@ -697,8 +697,8 @@ class Section(RedirectGenerator):
 
 class TemplateMetaNode(MetaNode):
     def process(self, engine, template, main):
-        main = engine(main)
         template = engine(template)
+        main = engine(main)
         return Template(template, main)
 
 
@@ -946,7 +946,7 @@ def source(node):
                 + node.whitespace_right)
 
 def format_anchor(s):
-    return s.lower().replace(' ', '-').replace('\n', '-').replace('~', '')
+    return s.lower().replace(' ', '-').replace('\n', '-').replace('~', '').replace('_', '-')
 
 def dedent(code):
     lines = code.split("\n")
@@ -1102,6 +1102,26 @@ def generate_html_file(documents):
                            script = documents['js'].format_html(),
                            contents = documents['html'].format_html(),
                            errtext = documents['errors'].format_html())
+
+
+
+def format_html(engine, node = None):
+    html = HTMLDocument()
+    docs = {'html': html}
+    if node is None:
+        execute_documents(engine, docs)
+    else:
+        evaluate(node, engine, docs)
+    return html.format_html()
+
+def format_text(engine, node):
+    text = TextDocument()
+    docs = {'text': text}
+    if node is None:
+        execute_documents(engine, docs)
+    else:
+        evaluate(node, engine, docs)
+    return text.data
 
 
 def evaluate(x, engine, documents):

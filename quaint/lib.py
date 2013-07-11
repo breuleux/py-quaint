@@ -20,6 +20,7 @@ from .engine import (
     Paragraph,
     AutoMerge,
     TOCGenerator,
+    format_html, format_text
 )
 pyeval = eval
 
@@ -233,8 +234,9 @@ def parse_link(link):
     if '/' in link or '.' in link:
         return Text(link)
     else:
-        return GenFrom('links',
-                       lambda links: links.get(format_anchor(link), link))
+        def get(links):
+            return links.get(format_anchor(link), link)
+        return GenFrom('links', get)
 
 
 link_handlers = {}
@@ -348,13 +350,13 @@ def header_n(n):
     def header(engine, node, title = None):
         if title is None:
             title, _ = node.args
-        title = title.raw()
-        anchor = format_anchor(title)
+        anchor = format_anchor(format_text(engine, title).strip())
+        title = format_html(engine, title)
         return Gen(GenFor('links', anchor, '#'+anchor),
                    Markup('<h%s id="' % n),
                    Markup(anchor),
                    Markup('">'),
-                   Section(anchor, engine(title), n),
+                   Section(anchor, Raw(title), n),
                    Markup("</h%s>" % n))
     return header
 
@@ -608,4 +610,5 @@ def include(engine, node, file):
 
 def insert_document(engine, node, docname):
     return GenFrom(source_nows(docname), lambda doc: doc.format_html())
+
 

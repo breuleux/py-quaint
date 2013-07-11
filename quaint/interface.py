@@ -43,7 +43,7 @@ def fullhtml_template():
 def get_extension(ext):
 
     if isinstance(ext, tuple):
-        return ext
+        return (get_extension(ext[0])[0], ext[1])
 
     if not isinstance(ext, str):
         return (ext, None)
@@ -73,8 +73,12 @@ def get_extension(ext):
 def apply_extensions(engine, extensions):
     for extension in extensions:
         extension, options = get_extension(extension)
-        options = options or {}
-        extension(engine, **options)
+        if options is None:
+            extension(engine)
+        elif isinstance(options, (list, tuple)):
+            extension(engine, *options)
+        else:
+            extension(engine, **options)
 
 
 def make_source(source):

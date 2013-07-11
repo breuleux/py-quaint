@@ -5,9 +5,11 @@
 Usage:
   quaint (tok|ast) [FILE | -s STR]
   quaint (eval|html) [FILE | -s STR] [--safe] [-x EXT] [-o OUT]
+  quaint site DIR [--safe] [-x EXT] [-o OUT]
 
 Arguments:
   FILE          Source file.
+  DIR           Source directory.
 
 Options:
   -h --help     Show this screen.
@@ -94,26 +96,11 @@ def x_ast(s, path, args):
     pr = boxy_terminus()
     pr((result), rules = rules, descr = ugdescr)
 
-@needs_source
-def x_eval(s, path, args):
-    ast = parse(Source(s, url = path))
-    documents = make_documents('js', 'css', 'links', 'xlinks', 'sections', 'meta',
-                               text = engine.TextDocument())
-
-    if not args['--safe'] and (not path or path.endswith('.py.q')):
-        eng = default_engine(engine.default_error_handler)
-    else:
-        eng = safe_engine(engine.default_error_handler)
-
-    evaluate(ast, eng, documents)
-    print(documents['text'].data)
-    # print("\x1B[?0;7y:h <div>" + documents['text'].data + "</div>\a")
-
 # @needs_source
 # def x_eval(s, path, args):
 #     ast = parse(Source(s, url = path))
 #     documents = make_documents('js', 'css', 'links', 'xlinks', 'sections', 'meta',
-#                                html = engine.HTMLDocument())
+#                                text = engine.TextDocument())
 
 #     if not args['--safe'] and (not path or path.endswith('.py.q')):
 #         eng = default_engine(engine.default_error_handler)
@@ -121,10 +108,46 @@ def x_eval(s, path, args):
 #         eng = safe_engine(engine.default_error_handler)
 
 #     evaluate(ast, eng, documents)
-#     print("\x1B[?0;7y:h <div>" + documents['html'].data + "</div>\a")
+#     print(documents['text'].data)
+#     # print("\x1B[?0;7y:h <div>" + documents['text'].data + "</div>\a")
+
+@needs_source
+def x_eval(s, path, args):
+    ast = parse(Source(s, url = path))
+    documents = make_documents('js', 'css', 'links', 'xlinks', 'sections', 'meta',
+                               html = engine.HTMLDocument())
+
+    if not args['--safe'] and (not path or path.endswith('.py.q')):
+        eng = default_engine(engine.default_error_handler)
+    else:
+        eng = safe_engine(engine.default_error_handler)
+
+    evaluate(ast, eng, documents)
+    print("\x1B[?0;7y:h <div>" + documents['html'].data + "</div>\a")
 
 @needs_source
 def x_html(s, path, args):
+
+    if not args['--safe'] and (not path or path.endswith('.py.q')):
+        eng = default_engine()
+    else:
+        eng = safe_engine()
+
+    if args['-x']:
+        ext = args['-x'].split(",")
+    else:
+        ext = []
+
+    html = full_html(Source(s, url = path), engine = eng, extensions = ext)
+    if args['-o']:
+        file = open(args['-o'], "w")
+        print(html, file = file)
+    else:
+        print(html)
+
+def x_site(args):
+
+    directory = blahblah
 
     if not args['--safe'] and (not path or path.endswith('.py.q')):
         eng = default_engine()
@@ -186,7 +209,7 @@ if __name__ == '__main__':
     args = docopt(__doc__)
 
     with prerror() as p:
-        for possibility in "tok ast eval html".split():
+        for possibility in "tok ast eval html site".split():
             if args[possibility]:
                 globals()["x_"+possibility](args)
                 break
