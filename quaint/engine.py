@@ -1,4 +1,5 @@
 
+import os
 import sys
 import re
 import traceback
@@ -291,6 +292,16 @@ class Engine:
         except Exception:
             return self.error_handler(self, ptree, sys.exc_info())
 
+    def curdir(self):
+        f = self.environment['__file__']
+        if f is None:
+            return os.curdir()
+        else:
+            return os.path.dirname(f)
+
+    def open(self, filename, *args, **kwargs):
+        return open(os.path.join(self.curdir(), filename), *args, **kwargs)
+
 
 
 
@@ -426,9 +437,11 @@ class SectionsDocument:
         else:
             if not self.subsections:
                 section = SectionsDocument()
+                self.subsections.append(section)
             else:
                 section = self.subsections[-1]
             section.add(name, contents, level - 1)
+
 
 
 
@@ -697,6 +710,7 @@ class Section(RedirectGenerator):
 
 class TemplateMetaNode(MetaNode):
     def process(self, engine, template, main):
+        engine.environment['__file__'] = main.location.source.url
         template = engine(template)
         main = engine(main)
         return Template(template, main)

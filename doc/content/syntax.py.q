@@ -199,7 +199,7 @@ Brackets (`[[]], `{} and `()) work as you'd expect with a few caveats.
     * We are _[best
       friends] forever!
 
-  Neither will these (the curly ones):
+  __[Neither will these] (the curly ones):
   python %
     {def f(x):
          return x}

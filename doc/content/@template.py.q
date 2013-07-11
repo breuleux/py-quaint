@@ -21,6 +21,7 @@ html ..
       logo <- {Raw("<img src='%s/theme/media/logo.png' height=80px />" % siteroot)}
       #logo .. {logo}::q:index
       .navlink #doc .. Doc::q:documentation
+      .navlink #recipes .. Recipes::q:recipes
       .navlink #source .. Source::https://github.com/breuleux/quaint
 
     h1 .title ..

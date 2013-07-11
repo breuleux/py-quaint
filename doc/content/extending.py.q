@@ -266,8 +266,7 @@ called `quaint_extend(engine). Here's example code:
 
 
 python %
-  from quaint.lib import Raw, Gen, wrapper, wrap_whitespace
-  from quaint.engine import RepoDocument
+  from quaint.lib import Raw, Gen, wrap_whitespace
 
   def swap(engine, node, left, right):
       return Gen(engine(right), engine(left))

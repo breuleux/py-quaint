@@ -19,7 +19,7 @@ body {
     font-family: 'Open Sans', 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    text-align: justify;
+    /* text-align: justify; */
 }
 
 .body {
@@ -172,3 +172,45 @@ table.show_args {
     font-family: monospace;
     vertical-align: middle;
 }
+
+.quaintin, .quaintout {
+    background-color: #f8f8ff;
+    padding: 5px;
+}
+
+.quaintin > span, .quaintout > span {
+    display: inline-block;
+    vertical-align: top;
+    padding-left: 5px;
+    margin-left: 10px;
+    margin-bottom: 5px;
+}
+
+.quaintin > span pre {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.quaintin > span {
+    border-left: 4px solid red;
+}
+
+.quaintout > span {
+    border-left: 4px solid blue;
+}
+
+.quaintin:before {
+    content: "In";
+}
+
+.quaintout:before {
+    content: "Out";
+}
+
+.quaintin:before, .quaintout:before {
+    display: inline-block;
+    width: 50px;
+    font-weight: bold;
+    color: #41727b;
+}
+

@@ -1,4 +1,5 @@
 
+import os
 import cgi
 import urllib.request
 import inspect
@@ -124,8 +125,8 @@ def parts_wrapper(w0, *wrappers):
 
 def wrapper(tag = "span", **attributes):
     return parts_wrapper(
-        (True, 'lhs', 'expr'),
-        dict(arg = "lhs?"),
+        (True, 'other', 'expr'),
+        dict(arg = "other?"),
         dict(arg = "expr",
              tag = tag,
              **attributes))
@@ -311,8 +312,12 @@ def extract_and_codehl(lang, code, do_dedent = True, unescape_brackets = False):
     return codehl(lang, code)
 
 
-def ignore(engine, node, x):
-    return Raw("")
+@wrap_whitespace
+def ignore(engine, node, left, right = None):
+    if right is None:
+        return Raw("")
+    else:
+        return Gen(engine(left), Raw(""))
 
 
 @wrap_whitespace
@@ -334,8 +339,11 @@ def code_block(engine, node, lang, code):
                Markup('</pre></div>'))
 
 def show_and_run(engine, node, code):
-    return Gen(code_block(engine, node, "quaint", code),
-               engine(code))
+    return Gen(Markup('<div class="quaintin"><span>'),
+               code_block(engine, node, "quaint", code),
+               Markup('</span></div><div class="quaintout"><span>'),
+               engine(code),
+               Markup('</span></div>'))
 
 def show_as_and_run(lang):
     def f(engine, node, code):
@@ -604,9 +612,8 @@ def show_args(engine, node, **params):
                Gen(*args),
                Raw("</table>"))
 
-
 def include(engine, node, file):
-    return engine(parse(open(source_nows(file)).read()))
+    return engine(parse(engine.open(source_nows(file)).read()))
 
 def insert_document(engine, node, docname):
     return GenFrom(source_nows(docname), lambda doc: doc.format_html())
