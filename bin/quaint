@@ -1,0 +1,191 @@
+#!/usr/bin/python3
+
+"""Quaint markup
+
+Usage:
+  quaint html [FILE | -s STR] [--safe] [-x EXT] [-f OUT]
+  quaint site DIR -f OUT [--safe] [-x EXT]
+
+Arguments:
+  FILE          Source file.
+  DIR           Source directory.
+
+Options:
+  -h --help     Show this screen.
+  -s STR        Use the provided string instead of a file.
+  -x EXT        Comma-separated list of extensions to load.
+  -f OUT        Output the result in file OUT
+  --safe        Do not allow arbitrary code execution in markup.
+"""
+
+from docopt import docopt
+from timeit import timeit
+
+from quaint import engine, extensions as qex
+from quaint.operparse import SyntaxError, Source
+from quaint.parser import tokenize, parse
+from quaint.engine import evaluate
+from quaint.builders import default_engine, safe_engine, make_documents
+from quaint.interface import full_html, site, fullhtml_template
+
+import yaml
+import os
+pj = os.path.join
+
+def get_source(args):
+    if args["FILE"]:
+        try:
+            s = open(args["FILE"]).read()
+            path = args["FILE"]
+        except IOError as e:
+            exit(e)
+    else:
+        s = args["-s"]
+        path = None
+    return s, path
+
+def needs_source(f):
+    def newf(args):
+        s, path = get_source(args)
+        return f(s, path, args)
+    return newf
+
+
+def parse_extstring(s):
+    # This is all a _massive hack.
+    x = '[' + s.replace('(', ': [').replace(')', ']') + ']'
+    parsed = yaml.safe_load(x)
+    exts = []
+    for entry in parsed:
+        if isinstance(entry, str):
+            exts.append(entry)
+        elif isinstance(entry, dict):
+            for k, v in entry.items():
+                if isinstance(v, str):
+                    exts.append((k, [v]))
+                elif isinstance(v, list):
+                    exts.append((k, v))
+                else:
+                    raise TypeError("Invalid extension syntax", s)
+        else:
+            raise TypeError("Invalid extension syntax", s)
+    return exts
+
+
+
+
+@needs_source
+def x_html(s, path, args):
+
+    if not args['--safe'] and (not path or path.endswith('.py.q')):
+        eng = default_engine()
+    else:
+        eng = safe_engine()
+
+    if args['-x']:
+        ext = parse_extstring(args['-x'])
+    else:
+        ext = []
+
+    html = full_html(Source(s, url = path), engine = eng, extensions = ext)
+    if args['-f']:
+        file = open(args['-f'], "w")
+        print(html, file = file)
+    else:
+        print(html)
+
+
+
+def _site_crawl_files(root, path, templates):
+
+    results = []
+    names = set(os.listdir(pj(root, path)))
+    template_names = {name for name in names
+                      if name.startswith('@') and name.endswith('.q')}
+
+    new_templates = {name.split('.')[0][1:]: pj(path, name)
+                     for name in template_names}
+    templates = dict(templates, **new_templates)
+
+    for name in (names - template_names):
+        fullname = pj(path, name)
+        if os.path.isdir(pj(root, fullname)):
+            results += _site_crawl_files(root, fullname, templates)
+        elif name.endswith('.q'):
+            results.append((fullname, templates))
+
+    return results
+
+def _site_make_dest(outroot, path):
+    dest = pj(outroot, path)
+    if dest.endswith('.py.q'):
+        dest = dest[:-5] + '.html'
+    elif dest.endswith('.q'):
+        dest = dest[:-2] + '.html'
+    return dest
+
+def _site_generate_all(root, outroot, files, extensions):
+
+    nodes = []
+    cache = {}
+
+    for fname, templates in files:
+
+        if 'template' in templates:
+            tn = templates['template']
+            if tn in cache:
+                template = cache[tn]
+            else:
+                turl = pj(root, tn)
+                template = parse(Source(open(turl).read(), url = turl))
+        else:
+            template = fullhtml_template()
+
+        url = pj(root, fname)
+        contents = parse(Source(open(url).read(), url = url))
+        nodes.append((fname, contents, template))
+
+    results = site(nodes, extensions = extensions)
+
+    for path, doc in results.items():
+        dest = _site_make_dest(outroot, path)
+
+        try:
+            dest_dir = '/'.join(dest.split('/')[:-1])
+            os.makedirs(dest_dir)
+        except OSError as e:
+            pass
+
+        dest = open(dest, "w")
+
+        print(doc.format_html(), file = dest)
+
+
+def x_site(args):
+
+    docroot = args["DIR"]
+    outroot = args["-f"]
+
+    if args['--safe']:
+        eng = safe_engine()
+    else:
+        eng = default_engine()
+
+    if args['-x']:
+        ext = parse_extstring(args['-x'])
+    else:
+        ext = []
+
+    _site_generate_all(docroot, outroot, _site_crawl_files(docroot, "", {}), ext)
+
+
+
+if __name__ == '__main__':
+    args = docopt(__doc__)
+
+    for possibility in "html site".split():
+        if args[possibility]:
+            globals()["x_"+possibility](args)
+            break
+
+
