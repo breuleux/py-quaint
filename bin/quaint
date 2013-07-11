@@ -3,8 +3,8 @@
 """Quaint markup
 
 Usage:
-  quaint html [FILE | -s STR] [--safe] [-x EXT] [-f OUT]
-  quaint site DIR -f OUT [--safe] [-x EXT]
+  quaint html [FILE | -s STR] [-o OUT] [--safe] [-x EXT] [-e ENV]
+  quaint site DIR -o OUT [--safe] [-x EXT] [-e ENV]
 
 Arguments:
   FILE          Source file.
@@ -13,8 +13,9 @@ Arguments:
 Options:
   -h --help     Show this screen.
   -s STR        Use the provided string instead of a file.
+  -o OUT        Output the result in file OUT
   -x EXT        Comma-separated list of extensions to load.
-  -f OUT        Output the result in file OUT
+  -e ENV        Comma-separated key: value pairs set as Quaint environment variables.
   --safe        Do not allow arbitrary code execution in markup.
 """
 
@@ -73,6 +74,20 @@ def parse_extstring(s):
 
 
 
+def get_ext(args):
+    if args['-x']:
+        ext = parse_extstring(args['-x'])
+    else:
+        ext = []
+
+    if args['-e']:
+        env = {}
+        for x in yaml.safe_load('[%s]' % args['-e']):
+            env.update(x)
+        ext.append(('extend_environment', [env]))
+
+    return ext
+
 
 @needs_source
 def x_html(s, path, args):
@@ -82,14 +97,13 @@ def x_html(s, path, args):
     else:
         eng = safe_engine()
 
-    if args['-x']:
-        ext = parse_extstring(args['-x'])
-    else:
-        ext = []
+    ext = get_ext(args)
 
-    html = full_html(Source(s, url = path), engine = eng, extensions = ext)
-    if args['-f']:
-        file = open(args['-f'], "w")
+    html = full_html(Source(s, url = path),
+                     engine = eng,
+                     extensions = ext)
+    if args['-o']:
+        file = open(args['-o'], "w")
         print(html, file = file)
     else:
         print(html)
@@ -164,17 +178,14 @@ def _site_generate_all(root, outroot, files, extensions):
 def x_site(args):
 
     docroot = args["DIR"]
-    outroot = args["-f"]
+    outroot = args["-o"]
 
     if args['--safe']:
         eng = safe_engine()
     else:
         eng = default_engine()
 
-    if args['-x']:
-        ext = parse_extstring(args['-x'])
-    else:
-        ext = []
+    ext = get_ext(args)
 
     _site_generate_all(docroot, outroot, _site_crawl_files(docroot, "", {}), ext)
 

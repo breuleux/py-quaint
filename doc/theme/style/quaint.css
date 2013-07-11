@@ -1,0 +1,59 @@
+
+
+#nav, #foot {
+    width: 900px;
+}
+
+#nav {
+    margin: auto;
+    background-color: #000;
+    height: 100px;
+}
+
+#logo, .navlink a {
+    padding: 10px;
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+#logo {
+    float: left;
+    background-color: #92785e;
+}
+
+.navlink {
+    float: left;
+    font-size: 24;
+    font-weight: bold;
+    color: #fff;
+    height: 80px;
+}
+
+.navlink a:hover, .footlink a:hover {
+    color: #fff;
+    background-color: #41727b;
+}
+
+.navlink a {
+    display: inline-block;
+    color: #fff;
+    text-decoration: none;
+    line-height: 80px;
+}
+
+
+#foot {
+    margin: auto;
+    background-color: #000;
+    height: 50px;
+}
+
+.footlink a {
+    display: inline-block;
+    color: #fff;
+    text-decoration: none;
+    line-height: 50px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+

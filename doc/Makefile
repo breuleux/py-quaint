@@ -3,10 +3,15 @@ BASEDIR=$(CURDIR)
 DOCDIR=$(BASEDIR)/content
 OUTPUTDIR=$(BASEDIR)/output
 THEMEDIR=$(BASEDIR)/theme
+URL=
 
-html:
-	quaint site $(DOCDIR) -f $(OUTPUTDIR) -x "use_theme(/theme)"
+html: theme
+	quaint site $(DOCDIR) -o $(OUTPUTDIR) -x "use_theme($(URL)/theme)" -e "siteroot: '$(URL)'"
+
+theme:
 	cp -r $(THEMEDIR) $(OUTPUTDIR)
 
 clean:
 	rm -rf $(OUTPUTDIR)
+
+.PHONY: theme

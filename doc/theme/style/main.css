@@ -1,0 +1,174 @@
+
+@import url("http://fonts.googleapis.com/css?family=Oswald:700|Open+Sans");
+@import url("quaint.css");
+@import url("errors.css");
+@import url("pygments.css");
+
+
+.body, h1.title {
+    width: 840px;
+}
+
+#main {
+    width: 800px;
+}
+
+
+body {
+    background-color: #fff;
+    font-family: 'Open Sans', 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    text-align: justify;
+}
+
+.body {
+    background: #f1decb;
+    margin: auto;
+    padding-top: 30px;
+    padding-left: 30px;
+    padding-right: 30px;
+    padding-bottom: 30px;
+}
+
+.buffer {
+    height: 1px;
+}
+
+#main {
+    background: #fff;
+    padding-bottom: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+
+h1.title {
+    color: #41727b;
+    font-weight: bold;
+    background-color: #fff;
+    margin: auto;
+    padding-left: 30px;
+    padding-right: 30px;
+    font-size: 3em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Oswald', 'Trebuchet MS';
+    font-weight: normal;
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 10px;
+}
+
+/* h1, h2 { */
+/*     padding-top: 0.25em; */
+/* } */
+
+h1 {
+    margin-left: -50px;
+    margin-right: -50px;
+    font-size: 2.3em;
+    border-top: 4px solid black;
+    border-bottom: 4px solid black;
+    /* background-color: #f0e0d0; */
+    background-color: #c89767;
+    /* color: #fff; */
+}
+h2 {
+    font-size: 2.0em;
+    border-bottom: 2px solid #888;
+}
+h3 { font-size: 1.7em }
+h4 { font-size: 1.35em }
+h5 { font-size: 1.2em }
+h6 { font-size: 1.1em }
+
+
+a {
+    text-decoration: none;
+    color: #00f;
+}
+
+a:hover {
+    color: #00a;
+}
+
+
+ul {
+    list-style-type: disc;
+}
+
+
+code { background-color: #eee; }
+pre {
+    background-color: #eef;
+    padding: 5px;
+}
+
+
+table {
+    border: 2px solid black;
+    border-collapse: collapse;
+}
+
+table th {
+    text-align: left;
+    border-bottom: 2px solid black;
+    background-color: #ddf;
+}
+
+tr:nth-child(odd) {
+    background-color: #f8f8ff;
+}
+
+tr:nth-child(even) {
+    background-color: #eeeef8;
+}
+
+table th, table td {
+    padding-left: 5px;
+    padding-right: 5px;
+    border-right: 1px solid black;
+}
+
+
+div.quote {
+    margin-top: 10px;
+}
+
+div.source {
+    color: #888;
+    border-bottom: 2px solid #888;
+    margin-left: 25px;
+}
+
+blockquote {
+    border-left: 4px solid blue;
+    margin-top: 0px;
+    margin-left: 25px;
+    padding-left: 5px;
+}
+
+blockquote div.source {
+    margin-left: 5px;
+}
+
+blockquote blockquote {
+    margin-left: 5px;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+table.show_args {
+    display: inline-block;
+    font-family: monospace;
+    vertical-align: middle;
+}

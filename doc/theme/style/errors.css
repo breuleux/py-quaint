@@ -1,0 +1,63 @@
+
+.error {
+    border-bottom: 2px solid red;
+}
+
+.err_link {
+    font-weight: bold;
+    color: red;
+}
+
+.err_reports {
+    width: 800px;
+    margin: auto;
+    margin-top: 30px;
+    padding: 20px;
+    background-color: white;
+}
+
+.err_report {
+    padding: 20px;
+    background-color: faa;
+}
+
+.err_num {
+    font-weight: bold;
+    color: red;
+}
+
+.err_source {
+    background-color: white;
+    border-bottom: 3px solid black;
+}
+
+.err_source div {
+    display: inline-block;
+    white-space: pre;
+}
+
+.err_exception {
+    background-color: white;
+    padding: 5px;
+    font-weight: bold;
+}
+
+.err_exception div {
+    display: inline;
+    white-space: pre;
+}
+
+.err_type {
+    color: red;
+}
+
+.err_type:after {
+    content: ":";
+}
+
+.err_traceback {
+    background-color: white;
+    white-space: pre;
+    padding: 5px;
+}
+
