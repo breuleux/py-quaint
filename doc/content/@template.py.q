@@ -1,4 +1,11 @@
 
+{
+  @link_type('q')
+  def quaint_link(engine, node, text, link):
+    return {'href': siteroot + link.raw() + '.html'}
+}
+
+
 html ..
 
   head ..
@@ -12,8 +19,8 @@ html ..
 
     #nav ..
       logo <- {Raw("<img src='%s/theme/media/logo.png' height=80px />" % siteroot)}
-      #logo .. {logo}::{siteroot + "index.html"}
-      .navlink #doc .. Doc::{siteroot + "documentation.html"}
+      #logo .. {logo}::q:index
+      .navlink #doc .. Doc::q:documentation
       .navlink #source .. Source::https://github.com/breuleux/quaint
 
     h1 .title ..

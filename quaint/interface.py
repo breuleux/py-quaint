@@ -50,7 +50,7 @@ def get_extension(ext):
 
     try:
         pack = __import__(ext, fromlist = ["the interface to __import__ is weird"])
-        return (getattr(pack, 'quaint_ext'), None)
+        return (getattr(pack, 'quaint_extend'), None)
     except ImportError:
         pass
 

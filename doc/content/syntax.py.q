@@ -1,7 +1,8 @@
 
+{meta}:
+  title: Syntax
+  author: Olivier Breuleux
 
-Syntax
-======
 
 Quaint's syntax is a simple operator based syntax. Each token is
 either a _word or an _operator. Any sequence of one or more of the
@@ -14,16 +15,17 @@ For instance, `[+] is an operator, `[++] is an operator, `[/_%%] is an
 operator, and so on. You can _escape an operator character or a
 bracket with \\ (e.g. `[\%]).
 
-{
-  red = wrapper(style = "color: red; font-weight: bold")
-  blue = wrapper(style = "color: blue; font-weight: bold")
-}
+{css}:
+  .lhs, .red {color: red; font-weight: bold; white-space: pre}
+  .rhs, .blue {color: blue; font-weight: bold; white-space: pre}
+  .oper {color: black; font-weight: bold}
+  .pre {white-space: pre; font-family: monospace}
 
 Almost all operators behave the same. Consider the `[/] operator, for
 instance. The `[/] operator take two arguments (left hand side and
-right hand side). In the following example, in {red}:red, I highlight
-the {red}:[left hand side], and in {blue}:blue, I highlight the
-{blue}:[right hand side]. Sometimes, one of them will be _void:
+right hand side). In the following example, in [span .red .. red], I
+highlight the [span .lhs .. left hand side], and in [span .blue .. blue],
+I highlight the [span .rhs .. right hand side]:
 
 {
   # Did you think I was highlighting by hand? :)
@@ -34,16 +36,11 @@ the {red}:[left hand side], and in {blue}:blue, I highlight the
                  Raw('<span class="rhs">'), source(rhs), Raw('</span>'))
   engine['maybe lhs / maybe rhs'] = hl
 
+  # This one's for later
   def pre(engine, node, expr):
       return Gen(Raw('<div class="pre">'), node.operator, engine(expr), Raw('</div>'))
   engine['## expr'] = pre
 }
-
-{css}:
-  .lhs {color: red; font-weight: bold; white-space: pre}
-  .rhs {color: blue; font-weight: bold; white-space: pre}
-  .oper {color: black; font-weight: bold}
-  .pre {white-space: pre; font-family: monospace}
 
 
 Operators bind tighter if there is no whitespace around them (__note:
@@ -81,8 +78,8 @@ it is still part of the parse tree!).
   * cow potato $$car/ spring grape
 
 __[Indented blocks] are given to the operator if they encompass the
-_whole line before the indented block. Look at this file's source to
-understand the layout better.
+_whole line before the indented block. Look at this file's source
+(bottom of the page) to understand the layout better.
 
 Left hand side /
   right
@@ -188,12 +185,11 @@ they obey the same rules as normal operators. Let's highlight the
 Brackets
 --------
 
-Brackets (`[[]], `{}, `() and `[<>]) work as you'd expect with a few
-caveats.
+Brackets (`[[]], `{} and `()) work as you'd expect with a few caveats.
 
-* `() and `[<>] are not matched across lines. For instance, if `[(]
-  and `[)] are found on different lines, they will be printed without
-  problem, but they won't be matched to form a unit.
+* `() are not matched across lines. For instance, if `[(] and `[)] are
+  found on different lines, they will be printed without problem, but
+  they won't be matched to form a unit.
 
 * An opening bracket will only match a closing bracket that's on a
   line with the same indent level. _[This can trip you].
@@ -208,10 +204,10 @@ caveats.
     {def f(x):
          return x}
 
-  While the first case is unfortunate, this rule stems from the idea
-  that indented blocks are often used to contain source code from
-  other languages, so it is best that they are self-contained units
-  and unbalanced brackets are stopped cold at their boundaries.
+  While the first case is certainly unfortunate, this rule stems from
+  the idea that indented blocks are often used to contain source code
+  from other languages, so it is best that they are self-contained
+  units and unbalanced brackets are stopped cold at their boundaries.
 
   You can rewrite the previous two examples like this:
   %

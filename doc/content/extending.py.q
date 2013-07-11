@@ -1,6 +1,14 @@
 
-Extending Quaint
-================
+{meta}:
+  title: Extending Quaint
+  author: Olivier Breuleux
+
+
+{toc}
+
+
+Phases
+======
 
 Quaint processes a document in four phases:
 
@@ -14,11 +22,11 @@ Generator building :=
 
 Document generation :=
 
-  * Several _documents are created (main, css, js, sections, xlinks,
+  * Several _documents are created (html, css, js, sections, xlinks,
     links, errors, etc.).
   * All generators are consulted for _dependencies. For instance,
     perhaps some generator needs to consult the _references document
-    in order to append a citation to the _main document.
+    in order to append a citation to the _html document.
   * For each document, each generator may contribute to the document.
 
 Assembly :=
@@ -30,7 +38,7 @@ document types.
 
 
 Customizing the engine
-----------------------
+======================
 
 The engine can be personalized by associating _patterns to
 _handlers. Here is a simple example that makes the `[%%] operator to
@@ -54,7 +62,7 @@ Let's go over the arguments of the function:
   `engine :=
     The handler is given the engine so that it may apply it to its
     other arguments. In `swap, we apply it to `right and `left so that
-    further rules may apply to them.
+    further rules may be triggered.
 
   `node :=
     The node the engine was applied to and matched the pattern.
@@ -80,14 +88,14 @@ Let's go over the arguments of the function:
     In `swap this is the same as `node.args[1].
 
 
-=== Generators
+== Generators
 
-Unless specified otherwise, all generators generate text to the _main
+Unless specified otherwise, all generators generate text to the _html
 document. Using the generators below, you should be able to implement
 most simple functionality easily.
 
 
-==== Basic generators
+=== Basic generators
 
 `Raw(x) :=
   Generates the string `x _unescaped. If `x contains HTML tags and the
@@ -102,7 +110,7 @@ most simple functionality easily.
 `x when `x is not an instance of `Generator :=
   Same as `Text(str(string))
 
-==== Other generators
+=== Other generators
 
 `List(x, y, ..., [ordered = False]) :=
   Generate a bullet list of `x, `y, etc. `ordered is a keyword
@@ -118,9 +126,9 @@ most simple functionality easily.
   tuple of generators (one for each column) or an instance of
   `TableHeader (which generates table headers).
 
-==== Cross-document generators
+=== Cross-document generators
 
-Normally, generators append to the _main document. `GenFor and
+Normally, generators append to the _html document. `GenFor and
 `GenFrom, on the other hand, allow you to stash and retrieve
 information in special documents. Why? The basic idea is that there
 are as many generation "phases" as there are documents, and the phases
@@ -131,10 +139,10 @@ contents, even though the table comes _before the sections it lists:
 each section generates _for the _sections document, populating it with
 a hierarchy of sections and subsections (not all documents are text
 documents). `toc on the other hand generates _from the sections
-document (formatting it for display) and into the main document. Of
+document (formatting it for display) and into the html document. Of
 course this necessitates that the sections document be generated
 first. So we do a first pass on all generators, asking for sections,
-then we do a second pass, asking for main.
+then we do a second pass, asking for html.
 
 `GenFor(doc, x, ...) :=
   Generates `x and the arguments that follow in the document `doc.
@@ -144,13 +152,13 @@ then we do a second pass, asking for main.
 
 `GenFrom(doc, f) :=
   First, forces the document called `doc to be generated before the
-  main document. Then, `f will be passed document `doc. It must return
-  a string to append to the main document. For instance, a
+  html document. Then, `f will be passed document `doc. It must return
+  a string to append to the html document. For instance, a
   bibliography might generate from the _references document (which
   could be populated using `GenFor).
 
 
-=== Patterns
+== Patterns
 
 The pattern language is parsed like Quaint, which creates a kind of
 mini parse tree. A leaf that's a word (alphanumeric, and _[no
@@ -239,7 +247,7 @@ The pattern can also be
 
 
 Where to write extensions
--------------------------
+=========================
 
 You have two major choices here:
 
@@ -250,10 +258,11 @@ You have two major choices here:
   include it.
 
 With the first option, simply enclose your Python code in [`{}]s. The
-source file that produced this page contains a few examples.
+source file that produced this page (link at the bottom) contains a
+few examples.
 
 If you make a separate file or module, it should define a function
-called `quaint_extend(engine, documents). Here's example code:
+called `quaint_extend(engine). Here's example code:
 
 
 python %
@@ -264,10 +273,12 @@ python %
       return Gen(engine(right), engine(left))
 
   @wrap_whitespace
-  def sup(engine, node, left, right):
+  def sup(engine, node, left, right = None):
+      if right is None:
+          left, right = "", left
       return Gen(engine(left), Raw("<sup>"), engine(right), Raw("</sup>"))
 
-  def quaint_extend(engine, documents):
+  def quaint_extend(engine):
       engine['left %% right'] = swap
       engine['maybe left ^ right'] = sup
       engine.extend_environment(x = "banana", sup = sup)
@@ -288,8 +299,7 @@ __Loading your extension:
 
 * On the __[command line], use the `-x option with the `quaint
   command.  If your extension is visible as a module, you can give the
-  module path, otherwise you can give the path to the Python file
-  defining the module:
+  module path.
 
   bash %
     quaint html -x your_extension doc.q
@@ -303,13 +313,17 @@ __Loading your extension:
 * In a __script:
 
   python %
-    from quaint import quaint
+    from quaint import full_html
     import your_extension
-    writer = quaint(extensions = [your_extension.quaint_extend])
-    html = writer(open(file).read())
+    html = full_html(open(file).read(),
+                     extensions = [your_extension.quaint_extend])
 
-  _Technically, there is no requirement for the extender to be named
-  `quaint_extend if you are writing a script. You just pass the
-  function directly. You can define the extension directly in the
-  script if you want.
+* Quaint will only look for a function named `quaint_extend if it is
+  given a _module. If you have a module `m containing an extension
+  named `ext, you can use the flag like `[-x m.ext] to tell Quaint
+  what function to use.
 
+* If your extension takes additional arguments after `engine, they can
+  be specified on the command line like `[-x
+  extension(arg1,arg2,...)], or in a script by providing a tuple
+  e.g. `[extensions = [(extension, [arg1, arg2, ...])]].
