@@ -1,0 +1,6 @@
+include README
+include LICENSE
+include setup.py
+include quaint/default_template.q
+include quaint/*.py
+include quaint/operparse/*.py
