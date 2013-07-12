@@ -4,7 +4,7 @@ setup(
     name = 'quaint',
     version = '0.1',
     packages = ['quaint', 'quaint.operparse'],   
-    package_data = {'quaint': ['default_engine.q']}
+    package_data = {'quaint': ['default_engine.q']},
     scripts = ['bin/quaint'],
 
     # Metadata
