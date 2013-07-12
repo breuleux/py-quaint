@@ -1,5 +1,5 @@
 
-from . import ast, lib, engine as mod_engine
+from . import ast, lib, document, engine as mod_engine
 
 
 def default_environment():
@@ -161,37 +161,6 @@ def safe_engine(error_handler = mod_engine.inline_error_handler,
     return engine
 
 
-document_types = dict(
-    html = mod_engine.HTMLDocument,
-    css = mod_engine.CSSDocument,
-    js = mod_engine.JSDocument,
-    links = mod_engine.RepoDocument,
-    xlinks = mod_engine.XLinksDocument,
-    sections = mod_engine.SectionsDocument,
-    meta = mod_engine.RepoDocument,
-    errors = mod_engine.ErrorsDocument,
-    files = mod_engine.RepoDocument,
-    globalinfo = mod_engine.RepoDocument,
-    )
-
-
-def make_documents(*names, **others):
-    docs = {}
-    for name in names:
-        docs[name] = document_types[name]()
-    docs.update(others)
-    return docs
-
-def complete_documents(docs, *names, **others):
-    docs = dict(docs)
-    for name in names:
-        if name not in docs:
-            docs[name] = document_types[name]()
-    for k, v in others.items():
-        if k not in docs:
-            docs[k] = v()
-    return docs
-
 
 
 class AddDocumentsMetaNode(mod_engine.MetaNode):
@@ -206,7 +175,7 @@ class AddDocuments(mod_engine.Generator):
         self.gen = gen
 
     def docmaps(self, current):
-        current = complete_documents(current, *self.docnames)
+        current = document.complete_documents(current, *self.docnames)
         results = [(current, self, self.deps(), self.generators())]
         results += self.gen.docmaps(current)
         return results
@@ -237,7 +206,7 @@ class MultiDocumentGenerator(mod_engine.Generator):
         rval = [(mydocs, self, self.deps(), self.generators())]
         for name, gen in self.gens:
             subdocs = dict(current)
-            subdocs.update(make_documents('html', *self.docnames))
+            subdocs.update(document.make_documents('html', *self.docnames))
             if 'meta' in self.docnames:
                 subdocs['meta']['path'] = name
             rval += gen.docmaps(subdocs)

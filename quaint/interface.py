@@ -4,12 +4,19 @@ from .parser import parse
 from .builders import (
     AddDocumentsMetaNode,
     HTMLMetaNode, MultiMetaNode,
-    make_documents, default_engine
+    default_engine
+    )
+from .document import (
+    make_documents, execute_documents
     )
 from .engine import (
-    TemplateMetaNode, HTMLDocument, evaluate, collapse
+    TemplateMetaNode, HTMLDocument
     )
 from . import ast, extensions, builders, engine as mod_engine
+
+
+def evaluate(x, engine, documents):
+    execute_documents(engine(x), documents)
 
 
 __fullhtml_template_text = open(os.path.join(os.path.dirname(__file__),

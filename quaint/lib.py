@@ -5,12 +5,19 @@ import urllib.request
 import inspect
 from . import ast, parser, engine as mod_engine
 from .parser import parse
-from .engine import (
-    source,
-    source_nows,
+from .document import (
+    HTMLDocument, TextDocument, execute_documents
+    )
+from .util import (
     format_anchor,
     dedent,
+    )
+from .ast import (
     collapse,
+    source,
+    source_nows,
+    )
+from .engine import (
     codehl,
     Generator,
     Raw, Text, Markup,
@@ -21,8 +28,7 @@ from .engine import (
     Paragraph,
     AutoMerge,
     TOCGenerator,
-    format_html, format_text
-)
+    )
 pyeval = eval
 
 import csv
@@ -608,5 +614,25 @@ def transgen(target, sources):
 
 def genfrom(*docs):
     return transgen('html', docs)
+
+
+
+def format_html(engine, node = None):
+    html = HTMLDocument()
+    docs = {'html': html}
+    if node is None:
+        execute_documents(engine, docs)
+    else:
+        execute_documents(engine(node), docs)
+    return html.format_html()
+
+def format_text(engine, node):
+    text = TextDocument()
+    docs = {'text': text}
+    if node is None:
+        execute_documents(engine, docs)
+    else:
+        execute_documents(engine(node), docs)
+    return text.data
 
 

@@ -133,3 +133,38 @@ def is_square_bracket(node):
 def is_curly_bracket(node):
     return is_oper(node, ('{', '}'))
 
+def source(node):
+    if isinstance(node, str) and not hasattr(node, 'raw'):
+        return node
+    else:
+        return (node.whitespace_left
+                + node.raw()
+                + node.whitespace_right)
+
+def source_nows(node):
+    if isinstance(node, str) and not hasattr(node, 'raw'):
+        return node
+    else:
+        return node.raw()
+
+def whitespace_before(node):
+    if isinstance(node, str) and not hasattr(node, 'whitespace_before'):
+        return ""
+    else:
+        return node.whitespace_before
+
+def whitespace_after(node):
+    if isinstance(node, str) and not hasattr(node, 'whitespace_after'):
+        return ""
+    else:
+        return node.whitespace_after
+
+def collapse(expr, op):
+    results = []
+    while isinstance(expr, InlineOp) and expr.operator == op:
+        results.append(expr.args[0])
+        expr = expr.args[1]
+    if not isinstance(expr, Void):
+        results.append(expr)
+    return results
+

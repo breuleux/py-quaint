@@ -28,9 +28,9 @@ from descr.util import Table, Group
 from quaint import engine
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
-from quaint.engine import evaluate
-from quaint.builders import default_engine, safe_engine, make_documents
-from quaint.interface import full_html
+from quaint.builders import default_engine, safe_engine
+from quaint.document import make_documents
+from quaint.interface import full_html, evaluate
 
 from ug.format import errors
 from quaint.displayrules import ugdescr, rules

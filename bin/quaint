@@ -25,8 +25,7 @@ from timeit import timeit
 from quaint import engine, extensions as qex
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
-from quaint.engine import evaluate
-from quaint.builders import default_engine, safe_engine, make_documents
+from quaint.builders import default_engine, safe_engine
 from quaint.interface import full_html, site, fullhtml_template
 
 import yaml
@@ -168,7 +167,7 @@ def _site_generate_all(root, outroot, files, extensions, engine):
         dest = html_name(outroot, path)
 
         try:
-            dest_dir = '/'.join(dest.split('/')[:-1])
+            dest_dir = os.path.dirname(dest)
             os.makedirs(dest_dir)
         except OSError as e:
             pass
