@@ -61,6 +61,8 @@ bash %
   quaint html example.py.q -o example.html
   <your-favorite-browser> example.html
 
+Check out the recipes::q:recipes/index for things to try :)
+
 
 Using
 =====
@@ -124,10 +126,11 @@ python %
 Learn more
 ==========
 
-* Check recipes::q:recipes/index.
+* Check the recipes::q:recipes/index (small tidbits to do the things
+  you want to do).
 
-* Documentation::q:documentation (a bit more in-depth, but still a
-  work in progress).
+* Documentation::q:documentation (more in-depth, but still a work in
+  progress).
 
 * Read [lib.py]::{ghurl + "quaint/lib.py"}. It's kinda messy and
   undocumented right now, but a lot of the functionality is defined

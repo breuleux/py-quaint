@@ -3,29 +3,28 @@
   title: Syntax
   author: Olivier Breuleux
 
+{css}:
+  .lhs, .red {color: red; font-weight: bold;}
+  .rhs, .blue {color: blue; font-weight: bold;}
+  .oper {color: black; font-weight: bold}
+  .pre, .lhs, .rhs, .oper {font-family: monospace; white-space: pre;}
 
 Quaint's syntax is a simple operator based syntax. Each token is
 either a _word or an _operator. Any sequence of one or more of the
 following characters is a distinct operator:
 
 {from quaint.parser import chr_op}
-{Raw(" ".join(chr_op))}
+.pre .. {Raw(" ".join(chr_op))}
 
 For instance, `[+] is an operator, `[++] is an operator, `[/_%%] is an
 operator, and so on. You can _escape an operator character or a
 bracket with \\ (e.g. `[\%]).
 
-{css}:
-  .lhs, .red {color: red; font-weight: bold; white-space: pre}
-  .rhs, .blue {color: blue; font-weight: bold; white-space: pre}
-  .oper {color: black; font-weight: bold}
-  .pre {white-space: pre; font-family: monospace}
-
 Almost all operators behave the same. Consider the `[/] operator, for
 instance. The `[/] operator take two arguments (left hand side and
-right hand side). In the following example, in [span .red .. red], I
-highlight the [span .lhs .. left hand side], and in [span .blue .. blue],
-I highlight the [span .rhs .. right hand side]:
+right hand side). In the following example, in [span .red]..red, I
+highlight the [span .lhs]..[left hand side], and in [span .blue]..blue,
+I highlight the [span .rhs]..[right hand side]:
 
 {
   # Did you think I was highlighting by hand? :)
@@ -46,6 +45,8 @@ I highlight the [span .rhs .. right hand side]:
 Operators bind tighter if there is no whitespace around them (__note:
 the (non-printing) `[~] character counts as whitespace).
 
+.pre ..
+
   * cow potato car / spring grape
   * cow potato car/spring grape
 
@@ -53,8 +54,10 @@ Operators are __prefix when they are at the beginning of a line, right
 after \[, or when the _[whitespace] is wider on the _left. Again,
 tightness matters.
 
-  * / cow potato car spring grape
-  * /cow potato car spring grape
+.pre ..
+
+  * [/ cow potato car spring grape]
+  * [/cow potato car spring grape]
   * cow potato car /spring grape
   * cow potato /[car spring] grape
   * cow potato \[[/ car spring]\] grape
@@ -62,6 +65,8 @@ tightness matters.
 Operators are __suffix when they are at the beginning of a line, right
 before \], or when the _[whitespace] is wider on the _right. Tightness
 matters.
+
+.pre ..
 
   * cow potato car spring grape /
   * cow potato car spring grape/
@@ -72,6 +77,8 @@ matters.
 Operators are __[right associative]. Observe how `[/] interacts with
 the `[$$] operator (the `[$$] operator _[does nothing], but even so,
 it is still part of the parse tree!).
+
+.pre ..
 
   * cow $$ potato car / spring $$ grape
   * cow potato /car$$ spring grape
@@ -100,6 +107,7 @@ Left hand side / right
 ## / However, the second and third lines in this paragraph are
      associated to `[##] even if they line up with `[/]. That's
      because it is `[##] and not `[/] that spans the whole first line!
+
 
 A few __exceptions are made in order to satisfy typographical
 expectations and reduce boilerplate.
