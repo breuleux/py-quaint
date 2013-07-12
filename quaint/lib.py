@@ -154,7 +154,6 @@ def op(engine, node, **_):
     for token, op in zip(node.args[1:], oper):
         args.append(Text(op))
         args.append(engine(token))
-    # return Gen(Raw("<span>"), Gen(*args), Raw("</span>"))
     return Gen(*args)
 
 @wrap_whitespace
@@ -173,7 +172,6 @@ def rawop(engine, node, **_):
 
 def indent(engine, node, i):
     contents = i.args
-    # return Gen(Markup("<span>"), Gen(*map(engine, contents)), Markup("</span>"))
     return Gen(*map(engine, contents))
 
 def paragraph(engine, node, par):
@@ -292,7 +290,6 @@ def anchor(engine, node, text, label):
 
 def extract_and_codehl(lang, code, do_dedent = True, unescape_brackets = False):
 
-    # if isinstance(code, ast.InlineOp) and code.operator == ('[', ']'):
     if ast.is_square_bracket(code):
         wsl, code, wsr = code.args
 
@@ -571,7 +568,6 @@ def grabdefs(engine, x):
                 value = pyeval(value.args[1].raw(), engine.environment)
             else:
                 value = value.raw()
-            #return Meta(key.raw().lower(), value)
             return GenFor('meta', key.raw().lower(), value)
         elif x.operator in ('P', 'B', 'I'):
             return Gen(*[grabdefs(engine, arg) for arg in x.args])
@@ -628,10 +624,6 @@ def transgen(target, sources):
         def ev(*documents):
             for src, doc in zip(sources, documents):
                 engine.environment[src] = doc
-            # result = eval(engine, node, body)
-            # print(result)
-            # if isinstance(result, Generator):
-            #     result = format_html(result)
             result = format_html(engine(body))
             return result
         return TransGen(target, sources, ev)

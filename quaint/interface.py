@@ -18,7 +18,6 @@ __fullhtml_template_text = open(os.path.join(os.path.dirname(__file__),
 __fullhtml_template = None
 
 
-
 def fullhtml_template():
     global __fullhtml_template
     if __fullhtml_template is None:
@@ -87,15 +86,6 @@ def full_html(source, extensions = [], engine = None, template = None):
     files = site([('result', source, template)], extensions, engine)
     return files['result'].data
 
-    # ptree = make_source(source)
-    # tptree = make_source(template or fullhtml_template())
-
-    # documents = make_documents('html')
-
-    # evaluate(AddDocumentsMetaNode(HTMLMetaNode(TemplateMetaNode(tptree, ptree)), *htdocs),
-    #          make_engine(engine, extensions), documents)
-    # return documents['html'].data
-
 
 def site(sources, extensions = [], engine = None):
     nodes = []
@@ -110,35 +100,4 @@ def site(sources, extensions = [], engine = None):
 
     evaluate(node, make_engine(engine, extensions), documents)
     return documents['files'].data
-
-
-
-
-
-# Quaint(engine = 'py.q/q/bare',
-#        extensions = [blah])
-
-
-
-# class Quaint:
-
-#     def __init__(self, extensions = []):
-#         self.extensions = []
-#         for extension in extensions:
-#             if isinstance(extension, str):
-#                 pass
-#             elif isinstance(extension, dict):
-#                 extension = lambda engine, docs: 
-#             else:
-#                 self.extensions.append(extension)
-
-#     def make(self, docs):
-#         pass
-
-#     def __call__(self, docs):
-#         return self.make(docs)
-
-
-# Quaint().make({"test.html": "I am _amazing"})
-
 

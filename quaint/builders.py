@@ -194,23 +194,6 @@ def complete_documents(docs, *names, **others):
 
 
 
-# def html_documents():
-
-#     documents = {
-#         'main': mod_engine.HTMLDocument(),
-#         'css': mod_engine.TextDocument(),
-#         'js': mod_engine.TextDocument(),
-#         'links': mod_engine.RepoDocument(),
-#         'xlinks': mod_engine.SetDocument(),
-#         'sections': mod_engine.SectionsDocument(),
-#         'meta': mod_engine.RepoDocument(),
-#         'errors': mod_engine.ListDocument(),
-#         }
-
-#     return documents
-
-
-
 class AddDocumentsMetaNode(mod_engine.MetaNode):
     def process(self, engine, node, *docnames):
         return AddDocuments(engine(node), *docnames)
@@ -228,12 +211,6 @@ class AddDocuments(mod_engine.Generator):
         results += self.gen.docmaps(current)
         return results
 
-
-# class HTMLDocumentsMetaNode(AddDocumentsMetaNode):
-#     __docnames__ = ('js', 'css', 'links', 'xlinks', 'sections',
-#                     'meta', 'errors')
-#     def process(self, engine, node):
-#         return super().process(engine, node, *self.__docnames__)
 
 class HTMLMetaNode(mod_engine.MetaNode):
     def process(self, engine, node):
@@ -257,8 +234,6 @@ class MultiDocumentGenerator(mod_engine.Generator):
 
     def docmaps(self, current):
         mydocs = dict(current)
-        # mydocs['files'] = RepoDocument()
-        # mydocs['globalinfo'] = RepoDocument()
         rval = [(mydocs, self, self.deps(), self.generators())]
         for name, gen in self.gens:
             subdocs = dict(current)

@@ -45,7 +45,6 @@ def create_pattern(ptree, properties):
 
         if ast.is_square_bracket(ptree):
             ptree = ptree.args[1]
-            #return create_pattern(ptree.args[1], properties)
 
         if ptree.operator:
 
@@ -243,28 +242,6 @@ class Engine:
         return None
 
     def register(self, pattern, function, first_character = True):
-
-        # if isinstance(pattern, str):
-        #     pattern = create_pattern(parse(pattern), [])
-
-        # if isinstance(pattern, tuple) or isinstance(pattern, type):
-        #     def p(ptree):
-        #         return match_pattern(pattern, ptree)
-        #     if isinstance(pattern, tuple):
-        #         head = pattern[0]
-        #         if isinstance(head, tuple):
-        #             head = head[0]
-        #         if isinstance(head, tuple):
-        #             # it needs to be done twice for operators that are
-        #             # tuples e.g. ('(', ')')
-        #             head = head[0]
-        #         if isinstance(head, str):
-        #             first_character = head and head[0]
-        #     elif isinstance(pattern, type):
-        #         first_character = pattern
-        # else:
-        #     p = pattern
-
         p = make_rule(pattern)
         if p.first_character is True:
             p.first_character = first_character
@@ -453,17 +430,6 @@ class SectionsDocument:
 
 
 
-# class SectionsDocument:
-
-#     def __init__(self):
-#         self.sections = []
-
-#     def add(self, name, contents):
-#         self.sections.append((name, contents))
-
-
-
-
 
 class Generator:
 
@@ -518,102 +484,11 @@ class GenFrom(TransGen):
         super().__init__('html', sources, fn)
 
 
-
-
-
-
-# class GenFor(Generator):
-
-#     def __init__(self, docname, *args):
-#         self.docname = docname
-#         self.args = args
-
-#     def generate(self, docs):
-#         docs[self.docname].add(*self.args)
-
-#     def generators(self):
-#         return {self.docname: self.generate}
-
-
-
-# class GenFrom(Generator):
-
-#     def __init__(self, docname, f):
-#         self.docname = docname
-#         self.f = f
-
-#     def generate_html(self, docs):
-#         docs['html'].add(self.f(docs[self.docname]))
-
-#     def deps(self):
-#         return {'html': self.docname}
-
-
 def fork_doc(docs, docname, gen):
     if docname in docs:
         return docs[docname].clone()
     else:
         return gen()
-
-    
-
-
-
-# class ProxyMetaNode(MetaNode):
-#     def process(self, engine, proxy, **nodes):
-#         engine = engine.clone()
-#         engine.environment.update(nodes)
-#         return engine(proxy)
-
-
-# class FullHTMLMetaNode(MetaNode):
-#     def process(self, engine, node):
-#         return FullHTMLGenerator(engine(node))
-
-# class FullHTMLGenerator(Generator):
-
-#     def __init__(self, gen):
-#         self.gen = gen
-
-#     def docmaps(self, current):
-#         for (doc, type) in [('html', HTMLDocument),
-#                             ('_sub_html', HTMLDocument),
-#                             ('css', CSSDocument),
-#                             ('js', JSDocument),
-#                             ('links', RepoDocument),
-#                             ('xlinks', XLinksDocument),
-#                             ('meta', RepoDocument),
-#                             ('sections', SectionsDocument),
-#                             ('errors', ErrorsDocument)]:
-#             if doc not in current:
-#                 current[doc] = type()
-
-#         subd = dict(current, html = current['_sub_html'])
-#         return ([(current, self, self.deps(), self.generators())]
-#                 + self.gen.docmaps(subd))
-
-#     def deps(self):
-#         subdocs = set('_sub_html css js links xlinks meta sections errors'.split())
-#         return {'html': subdocs}
-
-#     def generate_html(self, docs):
-#         unmangled_docs = dict(docs, html = docs['_sub_html'])
-#         docs['html'].add(generate_html_file(unmangled_docs))
-
-
-
-class KeywordGenerator(Generator):
-
-    def __init__(self, associations):
-        self.associations = associations
-
-    def generate_html(self, docs):
-        doc = docs['html']
-        for cls in doc.__class__.__mro__:
-            if cls in self.associations:
-                doc.add(self.associations[cls])
-                return
-        doc.add(self.associations.get(False, "?"))
 
 
 class Raw(Generator):
@@ -702,8 +577,6 @@ class Gen(PartsGenerator):
 
     def __init__(self, *children):
         self.children = children
-# [child if isinstance(child, Generator) else child
-#                          for child in children]
 
     def parts(self):
         return self.children
@@ -1129,43 +1002,6 @@ def toposort(pred):
         raise Exception("There are cycles in the topological ordering. (1)")
 
     return results
-
-
-def generate_html_file(documents):
-
-    template = dedent("""
-    <html>
-      <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-        {xlinks}
-        <title>
-          {title}
-        </title>
-        {style}
-      </head>
-      <body>
-        <div class="main">
-          {contents}
-        </div>
-        {script}
-        {errtext}
-      </body>
-    </html>
-    """)
-
-    # xlinks = []
-    # for type, link in documents['xlinks'].data:
-    #     xlinks.append('<link rel={type} href="{link}">'.format(
-    #             type = type, link = link))
-
-
-    return template.format(style = documents['css'].format_html(),
-                           title = documents['meta'].get('title', 'Untitled'),
-                           xlinks = documents['xlinks'].format_html(),
-                           script = documents['js'].format_html(),
-                           contents = documents['html'].format_html(),
-                           errtext = documents['errors'].format_html())
-
 
 
 def format_html(engine, node = None):
