@@ -14,7 +14,7 @@ from .engine import (
     codehl,
     Generator,
     Raw, Text, Markup,
-    GenFor, GenFrom,
+    TransGen, GenFor, GenFrom,
     List, Definitions, Table, TableHeader,
     Gen,
     Section,
@@ -617,5 +617,27 @@ def include(engine, node, file):
 
 def insert_document(engine, node, docname):
     return GenFrom(source_nows(docname), lambda doc: doc.format_html())
+
+
+def transgen(target, sources):
+    if isinstance(sources, str):
+        sources = [sources]
+    def gen(engine, node, body):
+        engine = engine.clone()
+        engine.error_handler = mod_engine.default_error_handler
+        def ev(*documents):
+            for src, doc in zip(sources, documents):
+                engine.environment[src] = doc
+            # result = eval(engine, node, body)
+            # print(result)
+            # if isinstance(result, Generator):
+            #     result = format_html(result)
+            result = format_html(engine(body))
+            return result
+        return TransGen(target, sources, ev)
+    return gen
+
+def genfrom(*docs):
+    return transgen('html', docs)
 
 

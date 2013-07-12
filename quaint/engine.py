@@ -282,7 +282,7 @@ class Engine:
         rval.environment.update(self.environment)
         return rval
 
-    def __call__(self, ptree):
+    def execute(self, ptree):
         result = self.match(ptree)
         if result is None:
             raise Exception("Could not find a rule for:", ptree)
@@ -291,6 +291,14 @@ class Engine:
             return f(self, ptree, **args)
         except Exception:
             return self.error_handler(self, ptree, sys.exc_info())
+
+    def __call__(self, ptree, **env):
+        if env:
+            engine = self.clone()
+            engine.environment.update(env)
+            return engine.execute(ptree)
+        else:
+            return self.execute(ptree)
 
     def curdir(self):
         f = self.environment['__file__']
@@ -473,31 +481,72 @@ class Generator:
         return results
 
 
-class GenFor(Generator):
+class TransGen(Generator):
 
-    def __init__(self, docname, *args):
-        self.docname = docname
-        self.args = args
-
-    def generate(self, docs):
-        docs[self.docname].add(*self.args)
-
-    def generators(self):
-        return {self.docname: self.generate}
-
-
-
-class GenFrom(Generator):
-
-    def __init__(self, docname, f):
-        self.docname = docname
-        self.f = f
-
-    def generate_html(self, docs):
-        docs['html'].add(self.f(docs[self.docname]))
+    def __init__(self, target, sources, fn):
+        self.target = target
+        self.sources = [sources] if isinstance(sources, str) else sources
+        self.fn = fn
 
     def deps(self):
-        return {'html': self.docname}
+        if self.sources:
+            return {self.target: set(self.sources)}
+        else:
+            return {}
+
+    def generate(self, docs):
+        args = [docs.get(src, None) for src in self.sources]
+        contrib = self.fn(*args)
+        docs[self.target].add(contrib)
+
+    def generators(self):
+        return {self.target: self.generate}
+
+
+class GenFor(TransGen):
+
+    def __init__(self, docname, *args):
+        super().__init__(docname, [], args)
+
+    def generate(self, docs):
+        docs[self.target].add(*self.fn)
+
+
+class GenFrom(TransGen):
+
+    def __init__(self, sources, fn):
+        super().__init__('html', sources, fn)
+
+
+
+
+
+
+# class GenFor(Generator):
+
+#     def __init__(self, docname, *args):
+#         self.docname = docname
+#         self.args = args
+
+#     def generate(self, docs):
+#         docs[self.docname].add(*self.args)
+
+#     def generators(self):
+#         return {self.docname: self.generate}
+
+
+
+# class GenFrom(Generator):
+
+#     def __init__(self, docname, f):
+#         self.docname = docname
+#         self.f = f
+
+#     def generate_html(self, docs):
+#         docs['html'].add(self.f(docs[self.docname]))
+
+#     def deps(self):
+#         return {'html': self.docname}
 
 
 def fork_doc(docs, docname, gen):
