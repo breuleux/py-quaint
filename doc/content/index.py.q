@@ -57,9 +57,9 @@ This will install a command called `quaint, which you can try
 immediately on an example (which we will fetch from the repository):
 
 bash %
-  wget https://raw.github.com/breuleux/quaint/master/doc/content/examples/features.q
-  quaint html features.q -o features.html
-  <your-favorite-browser> features.html
+  wget https://raw.github.com/breuleux/quaint/master/doc/content/example.py.q
+  quaint html example.py.q -o example.html
+  <your-favorite-browser> example.html
 
 
 Using
@@ -124,7 +124,7 @@ python %
 Learn more
 ==========
 
-* Look at examples::q:recipes/index. That's the best way to learn.
+* Check recipes::q:recipes/index.
 
 * Documentation::q:documentation (a bit more in-depth, but still a
   work in progress).
@@ -135,4 +135,7 @@ Learn more
   point. As a rule of thumb, when you see functionality where the
   syntax is like `[{xyz}: abc] the definition of `xyz is probably
   in `lib.py.
+
+* _[Last but not least], on each page here there's a link at the
+  bottom with the file's source code (in Quaint, of course).
 
