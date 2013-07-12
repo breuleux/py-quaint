@@ -2,7 +2,7 @@
 {
   @link_type('q')
   def quaint_link(engine, node, text, link):
-    return {'href': siteroot + link.raw() + '.html'}
+    return {'href': siteroot + "/" + link.raw() + '.html'}
 }
 
 
@@ -21,7 +21,7 @@ html ..
       logo <- {Raw("<img src='%s/theme/media/logo.png' height=80px />" % siteroot)}
       #logo .. {logo}::q:index
       .navlink #doc .. Doc::q:documentation
-      .navlink #recipes .. Recipes::q:recipes
+      .navlink #recipes .. Recipes::q:recipes/index
       .navlink #source .. Source::https://github.com/breuleux/quaint
 
     h1 .title ..
@@ -34,6 +34,7 @@ html ..
 
     #foot ..
       .footlink ..
+        {ghurl = "https://raw.github.com/breuleux/quaint/master/"}
         {ghdocurl = "https://raw.github.com/breuleux/quaint/master/doc/content/"}
         {
           GenFrom('meta', lambda d: ('<a href="%s%s">Source for this file</a>'

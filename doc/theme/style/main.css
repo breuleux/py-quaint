@@ -197,6 +197,7 @@ table.show_args {
 
 .quaintout > span {
     border-left: 4px solid blue;
+    width: 700px;
 }
 
 .quaintin:before {

@@ -124,7 +124,15 @@ python %
 Learn more
 ==========
 
-blah blah blah
+* Look at examples::q:recipes/index. That's the best way to learn.
 
+* Documentation::q:documentation (a bit more in-depth, but still a
+  work in progress).
 
+* Read [lib.py]::{ghurl + "quaint/lib.py"}. It's kinda messy and
+  undocumented right now, but a lot of the functionality is defined
+  there, and most code is straightforward, so it's a good starting
+  point. As a rule of thumb, when you see functionality where the
+  syntax is like `[{xyz}: abc] the definition of `xyz is probably
+  in `lib.py.
 
