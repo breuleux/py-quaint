@@ -1,5 +1,5 @@
 
-# from .operparse import Source
+import os
 from .parser import parse
 from .builders import (
     AddDocumentsMetaNode,
@@ -12,22 +12,8 @@ from .engine import (
 from . import ast, extensions, builders, engine as mod_engine
 
 
-__fullhtml_template_text = """
-html ..
-
-  head ..
-    meta [http-equiv = Content-type] [content = [text/html; charset=UTF-8]] ..
-    {insert_document}: xlinks
-    title ..
-      {meta}: title
-    {insert_document}: css
-
-  body ..
-    {insert_document}: js
-    div #main ..
-      {insert_document}: main
-    {insert_document}: errors
-"""
+__fullhtml_template_text = open(os.path.join(os.path.dirname(__file__),
+                                             'default_template.q')).read()
 
 __fullhtml_template = None
 

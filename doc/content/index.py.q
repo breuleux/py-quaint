@@ -104,7 +104,7 @@ structure will be preserved.
 * If Quaint finds a file called `[@template.q] or `[@template.py.q],
   it will use it as a template to generate all the documents in the
   directory (and subdirectories, unless they contain their own
-  template files). Example::{ghdocurl + "@template.py.q"}.
+  template files). [Default template]::{ghurl + "quaint/default_template.q"}.
 
 
 Programmatically
