@@ -4,7 +4,7 @@
     author: Olivier Breuleux
 
 
-See also __advanced::q:advanced and __expert::q:expert
+See also __advanced::q:recipes/advanced and __expert::q:recipes/expert
 recipes!
 
 {toc}

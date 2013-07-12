@@ -24,7 +24,7 @@ html ..
 
   body ..
     {insert_document}: js
-    div .main ..
+    div #main ..
       {insert_document}: main
     {insert_document}: errors
 """

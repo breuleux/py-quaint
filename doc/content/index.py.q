@@ -115,7 +115,7 @@ The following command:
 bash %
   quaint html file.q -o out.html -x extension
 
-Is equivalent to the following Python code:
+Is equivalent to the following Python 3 code:
 
 python %
   from quaint import full_html

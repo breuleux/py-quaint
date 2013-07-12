@@ -2,7 +2,7 @@
 {
   @link_type('q')
   def quaint_link(engine, node, text, link):
-    return {'href': siteroot + "/" + link.raw() + '.html'}
+    return {'href': siteroot + link.raw() + '.html'}
 }
 
 
@@ -18,7 +18,7 @@ html ..
   body ..
 
     #nav ..
-      logo <- {Raw("<img src='%s/theme/media/logo.png' height=80px />" % siteroot)}
+      logo <- {Raw("<img src='%stheme/media/logo.png' height=80px />" % siteroot)}
       #logo .. {logo}::q:index
       .navlink #doc .. Doc::q:documentation
       .navlink #recipes .. Recipes::q:recipes/index

@@ -46,12 +46,14 @@ their titles:
     {
       AutoMerge([engine(row,
                         path = path,
-                        link = (siteroot
-                                + path.replace('.py', '')
-                                      .replace('.q', '.html')),
+                        link = html_name(siteroot, path),
                         title = docs['meta'].get('title', "untitled"))
                  for path, docs in sorted(globalinfo.data.items())])
     }
+
+`siteroot is an environment variable that you can set with the `[-e]
+flag to the `quaint command. See the Makefile::{ghurl + 'doc/Makefile'}
+for this site.
 
 Mind that the markup in a `[{genfrom(...)}:] block can only generate
 to the _html document. You can't declare sections or meta-information

@@ -75,7 +75,7 @@ file.
 {show_and_run}:
   {include}: subdoc.q
 
-Link::q:subdoc to the included file.
+Link::q:recipes/subdoc to the included file.
 
 __Tip: the `[__file__] environment variable contains the path of the
 Quaint source file. Use `[engine.open(file)] to open a file in the
