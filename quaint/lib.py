@@ -558,39 +558,16 @@ def json(engine, node, expr):
     import_data(engine, results)
     return Raw("")
 
-
-def grabdefs(engine, x):
-
-    if isinstance(x, ast.Op):
-        if x.operator == ':':
-            key, value = x.args
-            if ast.is_curly_bracket(value):
-                value = pyeval(value.args[1].raw(), engine.environment)
-            else:
-                value = value.raw()
-            return GenFor('meta', key.raw().lower(), value)
-        elif x.operator in ('P', 'B', 'I'):
-            return Gen(*[grabdefs(engine, arg) for arg in x.args])
-        elif ast.is_square_bracket(x):
-            return grabdefs(engine, x.args[1])
-        else:
-            raise Exception("?!?")
-
-    elif isinstance(x, ast.Void):
-        return Raw("")
-
-    else:
-        raise Exception("?!?")
-
 def meta(engine, node, defs):
-
-    if (isinstance(defs, str)
-        or (isinstance(defs, ast.Op) and not defs.operator)):
-        key = defs.raw()
-        return GenFrom('meta', lambda doc: str(doc.get(key, "???")))
-
+    if not pyyaml:
+        raise ImportError("yaml is not installed!")
+    results = pyyaml.safe_load(defs.raw())
+    if isinstance(results, str):
+        return GenFrom('meta', lambda doc: str(doc.get(results, "???")))
+    elif isinstance(results, dict):
+        return Gen(*[GenFor('meta', k, v) for k, v in results.items()])
     else:
-        return grabdefs(engine, defs)
+        raise Exception("Meta-information must be a dictionary", results)
 
 
 def show_args(engine, node, **params):

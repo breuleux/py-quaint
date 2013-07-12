@@ -160,8 +160,8 @@ place to judge. Do remember to set `body to an empty string if you
 don't want `text to show up in the tags.
 
 
-Storing document parts
-----------------------
+Quick templates
+---------------
 
 `[var <- code] will put the parse tree of `code in the variable
 `var. The engine will be automatically applied if you return the parse

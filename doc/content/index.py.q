@@ -6,6 +6,12 @@
 
 {toc}
 
+.warning ..
+  Quaint is still in alpha. I give myself the leeway to change some
+  basic syntax, such as link syntax, as well as the Python interface.
+  Should be stable in a few weeks at most. Generation is also
+  sluggish, but hopefully I can fix that :)
+
 
 What is Quaint?
 ===============
@@ -142,3 +148,6 @@ Learn more
 * _[Last but not least], on each page here there's a link at the
   bottom with the file's source code (in Quaint, of course).
 
+
+{html}:
+  <a href="https://github.com/breuleux/quaint"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>

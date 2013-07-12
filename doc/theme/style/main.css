@@ -216,3 +216,14 @@ table.show_args {
     color: #41727b;
 }
 
+.warning {
+    padding: 10px;
+    color: #500;
+    background-color: #fdd;    
+}
+
+.warning:before {
+    content: "Warning: ";
+    color: #500;    
+    font-weight: bold;
+}
