@@ -438,6 +438,8 @@ def eval(engine, node, body):
     else:
         if isinstance(x, (ast.ASTNode, ast.quaintstr)):
             x = engine(x)
+        elif x in (False, None):
+            x = Text("")
         elif not isinstance(x, Generator):
             x = Text(str(x))
 
@@ -582,11 +584,21 @@ def meta(engine, node, defs):
         raise ImportError("yaml is not installed!")
     results = pyyaml.safe_load(defs.raw())
     if isinstance(results, str):
-        return GenFrom('meta', lambda doc: str(doc.get(results, "???")))
+        return GenFrom('meta', lambda doc: str(doc.get(results, "")))
     elif isinstance(results, dict):
         return Gen(*[GenFor('meta', k, v) for k, v in results.items()])
     else:
         raise Exception("Meta-information must be a dictionary", results)
+
+def ifthenelse(engine, node, cond, yes, no = None):
+    cond = format_html(engine, cond).strip()
+    if cond:
+        return engine(yes)
+    elif no:
+        return engine(no)
+    else:
+        return Text("")
+
 
 
 def show_args(engine, node, **params):
