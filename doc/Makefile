@@ -2,14 +2,14 @@
 BASEDIR=$(CURDIR)
 DOCDIR=$(BASEDIR)/content
 OUTPUTDIR=$(BASEDIR)/output
-THEMEDIR=$(BASEDIR)/theme
+ASSETSDIR=$(BASEDIR)/assets
 URL=/
 
-html: theme
-	quaint site $(DOCDIR) -o $(OUTPUTDIR) -x "use_theme($(URL)theme)" -e "siteroot: '$(URL)'"
+html: assets
+	quaint site $(DOCDIR) -o $(OUTPUTDIR) -x "use_assets($(URL)assets)" -e "siteroot: '$(URL)'"
 
-theme: output
-	cp -r $(THEMEDIR) $(OUTPUTDIR)
+assets: output
+	cp -r $(ASSETSDIR) $(OUTPUTDIR)
 
 output:
 	mkdir output
@@ -17,4 +17,4 @@ output:
 clean:
 	rm -rf $(OUTPUTDIR)
 
-.PHONY: theme
+.PHONY: assets

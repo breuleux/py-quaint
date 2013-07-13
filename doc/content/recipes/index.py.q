@@ -4,6 +4,10 @@
     author: Olivier Breuleux
 
 
+{use_asset}: script/tabs.js
+{js}:
+    convert_all_tabdivs("tabbed");
+
 See also __advanced::q:recipes/advanced and __expert::q:recipes/expert
 recipes!
 
@@ -39,38 +43,51 @@ counts as whitespace, but is omitted from output.
 Lists
 -----
 
-{show_and_run}:
+.tabbed ..
+  ..
+    .. Bullets
+    .. Numbered
+    .. From number
+    .. Alpha
+    .. Roman
+  ..
+    ..
+      {show_and_run}:
+      
+        * Bullet
+        * Points
+          * And sub-points as well.
+            They can span multiple lines
+            with proper indent.
 
-  * Bullet
-  * Points
-    * And sub-points as well.
-      They can span multiple lines
-      with proper indent.
-
-{show_and_run}:
-
-  # One
-  # Two
-  # Three
-
-{show_and_run}:
-
-  8 # Eight
-  . # Nine
-  . # Ten
-
-{show_and_run}:
-
-  A # A
-  . # Bee
-  . # Cee
-
-{show_and_run}:
-
-  i # eye
-  . # eye eye
-  . # eye eye eye
-  . # eye vee
+    ..      
+      {show_and_run}:
+      
+        # One
+        # Two
+        # Three
+      
+    ..
+      {show_and_run}:
+      
+        8 # Eight
+        . # Nine
+        . # Ten
+      
+    ..
+      {show_and_run}:
+      
+        A # A
+        . # Bee
+        . # Cee
+      
+    ..
+      {show_and_run}:
+      
+        i # eye
+        . # eye eye
+        . # eye eye eye
+        . # eye vee
 
 
 Headers

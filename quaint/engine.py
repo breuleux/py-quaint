@@ -284,8 +284,14 @@ class Engine:
         else:
             return os.path.dirname(f)
 
+    def expand_path(self, path):
+        if path.startswith('/'):
+            return path
+        else:
+            return os.path.join(self.curdir(), path)
+
     def open(self, filename, *args, **kwargs):
-        return open(os.path.join(self.curdir(), filename), *args, **kwargs)
+        return open(self.expand_path(filename), *args, **kwargs)
 
 
 

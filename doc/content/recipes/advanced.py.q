@@ -16,12 +16,14 @@ Comments
 Use `[;;] for comments. Note that `[;;] works like a normal operator
 (see the ::q:syntax), and comments out its right hand side.
 
-{show_and_run}:
-  It is public ;; and this is private
-  that my favorite fruit is the ;;apple ;;banana cherry.
-  ;;
-    This entire paragraph
-    is too scandalous to be shown.
+.sar-60 ..
+  {show_and_run}:
+    It is public ;; and this is private
+    that my favorite fruit is the ;;apple
+    ;;banana cherry.
+    ;;
+      This entire paragraph
+      is too scandalous to be shown.
 
 
 Embedding HTML
@@ -29,31 +31,33 @@ Embedding HTML
 
 You can embed raw HTML with `[{html}:] (and CSS with `[{css}:])
 
-{show_and_run}:
-  {css}:
-    .blue, .red, .green {margin: 10px;}
-    .blue {border: 4px solid blue}
-    .red {border: 4px solid red}
-    .green {border: 4px solid green}
-  {html}:
-    <div class="blue" id="box1">
-      <div class="red">
-        Here's some <em>text!</em>
+.sar-60 ..
+  {show_and_run}:
+    {css}:
+      .blue, .red, .green {margin: 10px;}
+      .blue {border: 4px solid blue}
+      .red {border: 4px solid red}
+      .green {border: 4px solid green}
+    {html}:
+      <div class="blue" id="box1">
+        <div class="red">
+          Here's some <em>text!</em>
+        </div>
+        <div class="green">
+          La la la
+        </div>
       </div>
-      <div class="green">
-        La la la
-      </div>
-    </div>
 
 Of course, that's a bit tedious and you can't embed Quaint expressions
 in it, so there's a better way:
 
-{show_and_run}:
-  .blue #box2 ..
-    .red ..
-      Here's some _text!
-    .green ..
-      La la la
+.sar-60 ..
+  {show_and_run}:
+    .blue #box2 ..
+      .red ..
+        Here's some _text!
+      .green ..
+        La la la
 
 By default the syntax creates `div elements, but you can override
 that, e.g. `x[sup..2] -> x[sup..2].
@@ -63,7 +67,8 @@ that, e.g. `x[sup..2] -> x[sup..2].
   `[.red .. xyz] or `[[.red]..xyz].
 
 {show_and_run}:
-  [#anchor ..]Define anchors and [link to them]::anchor.
+  [#anchor ..]Define anchors
+  and [link to them]::anchor.
 
 
 Including files
@@ -92,32 +97,35 @@ of whitespace for you.
 * The argument to wrap _must be called `expr.
 * If there is an argument named `other, it will be printed but not wrapped.
 
-{show_and_run}:
-  {engine["maybe other ^ expr"] = wrapper("sup")}
-  3^2 + 4^2 = 5^2
+.sar-80 ..
+  {show_and_run}:
+    {engine["maybe other ^ expr"] = wrapper("sup")}
+    3^2 + 4^2 = 5^2
 
 For the above, remember that `maybe means that the left hand side
 might be empty.
 
-{show_and_run}:
-  {engine["&* expr"] = wrapper("span", classes = "reddish")}
-  {css}: .reddish {color: #835}
-  This is &*reddish and &*[__ bold reddish].
+.sar-80 ..
+  {show_and_run}:
+    {engine["&* expr"]=wrapper("span",classes="reddish")}
+    {css}: .reddish {color: #835}
+    This is &*reddish and &*[__ bold reddish].
 
 If your use case is more complex, you can always just write it
 yourself. Here's an implementation of the above to get you started:
 
-{show_and_run}:
-  {
-    @wrap_whitespace
-    def reddish(engine, node, expr):
-        return Gen(Markup('<span class="reddish">'),
-                   engine(expr),
-                   Markup('</span>'))
-    engine["&** expr"] = reddish
-  }
-  {css}: .reddish {color: #835}
-  This is also &**reddish and &**[__ bold reddish].
+.sar-80 ..
+  {show_and_run}:
+    {
+      @wrap_whitespace
+      def reddish(engine, node, expr):
+          return Gen(Markup('<span class="reddish">'),
+                     engine(expr),
+                     Markup('</span>'))
+      engine["&** expr"] = reddish
+    }
+    {css}: .reddish {color: #835}
+    This is also &**reddish and &**[__ bold reddish].
 
 
 Link types
@@ -126,38 +134,89 @@ Link types
 To define your own kind of link, e.g. links to Wikipedia, you can hook
 into the link syntax:
 
-{show_and_run}:
-  {
-    @link_type('wiki')
-    def wiki_link(engine, node, text, link):
-      return {'href': 'http://wikipedia.org/wiki/%s' % link.raw()}
-  }
-  Most people eat ::wiki:pasta with [toothed utensils]::wiki:Fork.
+.sar-60 ..
+  {show_and_run}:
+    {
+      @link_type('wiki')
+      def wiki_link(engine, node, text, link):
+        return {'href':'//wikipedia.org/wiki/%s'
+                       % link.raw()}
+    }
+    Most people eat ::wiki:pasta with
+    [toothed utensils]::wiki:Fork.
 
 The `text and `link arguments will be set to each other if one is
 missing (by default, `text will be the body of the tag, so you don't
 need to worry about it). Of course, if the syntax is not terse enough
 for you, you can make it terser:
 
-{show_and_run}:
-  {engine['maybe text // link'] = wiki_link}
-  Most people eat //pasta with [toothed utensils]//fork.
+.sar-60 ..
+  {show_and_run}:
+    {engine['maybe text // link'] = wiki_link}
+    Most people eat //pasta with
+    [toothed utensils]//fork.
 
 Note that you can make it produce pretty much any kind of tag. For
 instance:
 
-{show_and_run}:
-  {
-    @link_type('bold')
-    def bold_link(engine, node, text, link):
-      return {'tag': 'b', 'body': link.raw()}
-  }
-  We have a new way to do ::bold:emphasis.
+.sar-60 ..
+  {show_and_run}:
+    {
+      @link_type('bold')
+      def bold_link(engine, node, text, link):
+        return {'tag': 'b', 'body': link.raw()}
+    }
+    We have a new way to do ::bold:emphasis.
 
 By convention, this feature should only be used for links, images or
 embedded media (youtube etc.) -- not for bold tags -- but it's not my
 place to judge. Do remember to set `body to an empty string if you
 don't want `text to show up in the tags.
+
+
+YAML data
+---------
+
+You can define data structures using //YAML, which is sometimes
+practical. The YAML document must define a dictionary, so that each
+key/value pair in it will set an environment variable.
+
+{show_and_run}:
+  {yaml}:
+    food:
+      - potatoes
+      - bananas
+      - cakes
+      - maple syrup
+    people:
+      - {name: Peter, age: 26}
+      - {name: Hilda, age: 61}
+      - {name: Homer, age: 4}
+
+  {List(*food)}
+
+  {
+    Table(TableHeader("Name", "Age"),
+          *[[p['name'], p['age']]
+            for p in people])
+  }
+
+You can also load the data from a file or a URL. Here we load from
+//JSON format (YAML, JSON and CSV//Comma-separated_values) are available.
+
+The data can be a url or an absolute path, otherwise it is relative to
+the source.
+
+.sar-vstack ..
+  {show_and_run}:
+    data <= gross.json
+
+    {
+      Table(TableHeader("Rank", "Title", "Gross", "Year"),
+            *[[i + 1, entry["Title"], entry["Gross"], entry["Year"]]
+              for i, entry in enumerate(data[:10])])
+    }
+
 
 
 Quick templates
@@ -177,7 +236,9 @@ times, with different values for the environment variables:
 
 {show_and_run}:
   x <- I love {var}!
+
   {
-    Gen(*[engine(x, var = thing)
-          for thing in "potatoes bananas cakes".split()])
+    Gen(*[engine(x, var = f)
+          for f in food])
   }
+

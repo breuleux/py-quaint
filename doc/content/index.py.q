@@ -3,6 +3,9 @@
   title: Quaint
   author: Olivier Breuleux
 
+{use_asset}: script/tabs.js
+{js}:
+    convert_all_tabdivs("tabbed");
 
 .tabbed ..
   ..
@@ -47,7 +50,6 @@
     .sar-20 ..
       {show_and_run}:
         {toc}
-
 
 .warning ..
   Quaint is still in alpha. I give myself the leeway to change some
@@ -128,13 +130,13 @@ To generate individual documents
 bash %
   quaint mydoc.q -o output.html -x "extension1, extension2(arg1, arg2)"
 
-* A useful extension is `use_theme, which will make the output use the
-  stylesheet contained in `theme/style/main.css relative to the
+* A useful extension is `use_assets, which will make the output use the
+  stylesheet contained in `assets/style/main.css relative to the
   current working directory and will enable the syntax
-  `[::media:image.png] to link to the images you put in `theme/media.
+  `[::media:image.png] to link to the images you put in `assets/media.
 
-  * `[-x use_theme(borkborkbork)] will fetch the theme in
-    `borkborkbork/ instead of `theme/.
+  * `[-x use_assets(borkborkbork)] will fetch the assets in
+    `borkborkbork/ instead of `assets/.
 
 * Rename the file `mydoc.py.q if you want to embed Python code in it.
 
@@ -196,37 +198,4 @@ Learn more
 
 {html}:
   <a href="https://github.com/breuleux/quaint"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
-
-
-
-
-{js}:
-    function show_tab(tabs, elems, j) {
-        return function() {
-            for (var i = 0; i < tabs.children.length; i++) {
-                if (i == j) {
-                    tabs.children[i].className = "active";
-                    elems.children[i].style.display = "block";
-                }
-                else {
-                    tabs.children[i].className = "";
-                    elems.children[i].style.display = "none";
-                }
-            }
-        };
-    }
-    function convert_tabdiv(tabdiv) {
-        var tabs = tabdiv.children[0];
-        var elems = tabdiv.children[1];
-        tabs.className = "tabs";
-        for (var i = 0; i < tabs.children.length; i++)
-            tabs.children[i].onclick = show_tab(tabs, elems, i);
-        show_tab(tabs, elems, 0)();
-    }
-    function convert_all_tabdivs(classname) {
-        var elements = document.getElementsByClassName(classname)
-        for (var i = 0; i < elements.length; i++)
-            convert_tabdiv(elements[i]);
-    }
-    convert_all_tabdivs("tabbed");
 

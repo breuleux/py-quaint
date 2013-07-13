@@ -518,33 +518,33 @@ def load_type(type):
         return f
     return wrap
 
-def urlload(url):
+def urlload(url, engine):
     if isinstance(url, ast.InlineOp) and url.operator in ['://', ':']:
         file = source_nows(url)
     else:
-        file = 'file:' + source_nows(url)
+        file = 'file:' + engine.expand_path(source_nows(url))
     return urllib.request.urlopen(file).read().decode('utf-8')
 
 @load_type('yaml')
 def load_yaml(engine, node, file):
     if not pyyaml:
         raise ImportError("yaml is not installed!")
-    results = pyyaml.safe_load(urlload(file))
+    results = pyyaml.safe_load(urlload(file, engine))
     return results
 
 @load_type('json')
 def load_json(engine, node, file):
-    results = pyjson.loads(urlload(file))
+    results = pyjson.loads(urlload(file, engine))
     return results
 
 @load_type('csv')
 def load_csv(engine, node, file):
-    results = list(csv.reader(urlload(file).split('\n'), skipinitialspace = True))
+    results = list(csv.reader(urlload(file, engine).split('\n'), skipinitialspace = True))
     return results
 
 
-def load_in_var(engine, node, name, type, file):
-    if isinstance(type, ast.Void):
+def load_in_var(engine, node, name, file, type = None):
+    if type is None or isinstance(type, ast.Void):
         type = source_nows(file).split(".")[-1]
     results = load_handlers[type](engine, node, file)
     engine.environment[source_nows(name)] = results

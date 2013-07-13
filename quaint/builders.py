@@ -95,6 +95,7 @@ default_bindings = bare_bindings + [
     ('maybe left ;; right', 'ignore'),
     ('name <- body', 'setvar'),
     ('name <= maybe type :: file', 'load_in_var'),
+    ('name <= file', 'load_in_var'),
 
     ]
 

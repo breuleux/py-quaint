@@ -87,8 +87,12 @@ class XLinksDocument(SetDocument):
     def format_html(self):
         xlinks = []
         for type, link in self.data:
-            xlinks.append('<link rel={type} href="{link}">'.format(
-                    type = type, link = link))
+            if type == 'text/javascript':
+                xlinks.append('<script type="{type}" src="{link}"></script>'.format(
+                        type = type, link = link))
+            else:
+                xlinks.append('<link rel="{type}" href="{link}">'.format(
+                        type = type, link = link))
         return "\n".join(xlinks)
 
 class ErrorsDocument(ListDocument):
