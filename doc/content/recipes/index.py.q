@@ -12,12 +12,12 @@ recipes!
 Basic markup
 ------------
 
-Notice the use of `[] in order to group words together.
+Notice the use of `[[]] in order to group words together.
 
 {show_and_run}:
-  There's _emphasis and __[strong emphasis].
+  _Emphasis and __[strong emphasis].
   A link to Google::http://google.com.
-  Some `typewriter-formatted text.
+  Some `typewriter text.
 
 {show_and_run}:
   _ You can emphasize whole lines.
@@ -32,7 +32,8 @@ counts as whitespace, but is omitted from output.
 {show_and_run}:
   No \_emphasis here.
   No~spaces~here~because~of\~.
-  Two ways of em[_pha]sis in the middle of a syl~_la~ble.
+  Two ways of em[_pha]sis in
+  the middle of a syl~_la~ble.
 
 
 Lists
@@ -43,7 +44,8 @@ Lists
   * Bullet
   * Points
     * And sub-points as well.
-      They can span multiple lines with proper indent.
+      They can span multiple lines
+      with proper indent.
 
 {show_and_run}:
 
@@ -110,7 +112,9 @@ Code
 Inline:
 
 {show_and_run}:
-  `[This is plain]. This is Python: python`[print("hello!")]
+  `[This is plain].
+  This is Python:
+  python`[print("hello!")]
 
 Blocks:
 
@@ -137,7 +141,7 @@ Quotes
   >>
     Quoting a
     whole paragraph
-    someone more interesting >> Quoting someone
+    Einstein >> Quoting someone
       more interesting
 
 
@@ -148,8 +152,4 @@ Definitions
   Term := Definition
   Other term :=
     Other definition
-
-
-
-
 

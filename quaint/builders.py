@@ -90,7 +90,7 @@ default_bindings = bare_bindings + [
     ('wide [| row]', 'table_row'),
 
     # Others
-    ('tag .. maybe body', 'domnode'),
+    ('maybe tag .. maybe body', 'domnode'),
     ('wide [maybe source >> quote]', 'quote'),
     ('maybe left ;; right', 'ignore'),
     ('name <- body', 'setvar'),

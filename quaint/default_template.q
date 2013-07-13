@@ -9,7 +9,7 @@ html ..
     {insert_document}: css
 
   body ..
-    {insert_document}: js
     div #main ..
       {insert_document}: main
     {insert_document}: errors
+    {insert_document}: js

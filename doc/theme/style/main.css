@@ -174,47 +174,115 @@ table.show_args {
     vertical-align: middle;
 }
 
-.quaintin, .quaintout {
-    background-color: #f8f8ff;
-    padding: 5px;
-}
 
-.quaintin > span, .quaintout > span {
-    display: inline-block;
-    vertical-align: top;
-    padding-left: 5px;
-    margin-left: 10px;
-    margin-bottom: 5px;
-}
-
-.quaintin > span pre {
-    margin-top: 0px;
-    margin-bottom: 0px;
-}
-
-.quaintin > span {
-    border-left: 4px solid red;
-}
-
-.quaintout > span {
-    border-left: 4px solid blue;
-    width: 700px;
-}
-
-.quaintin:before {
-    content: "In";
-}
-
-.quaintout:before {
-    content: "Out";
-}
-
-.quaintin:before, .quaintout:before {
-    display: inline-block;
-    width: 50px;
+.tabs > .active {
+    background-color: #eef;
     font-weight: bold;
-    color: #41727b;
 }
+
+.tabs > .active {
+    background-color: #eef;
+    color: #000;
+    font-weight: bold;
+}
+
+.tabs > div {
+    padding: 5px;
+    margin-right: 5px;
+    display: inline-block;
+    background-color: #41727b;
+    color: #fff;
+}
+
+
+
+
+.quaintio {
+
+    display: -webkit-box;
+    -webkit-box-orient: horizontal;
+
+    display: -moz-box;
+    -moz-box-orient: horizontal;
+
+    display: box;
+    box-orient: horizontal;
+
+    background-color: #eef;
+}
+
+.quaintin {
+    border-right: 4px solid #bbd;
+    padding: 5px;
+    width: 45%;
+}
+
+.quaintout {
+    padding: 5px;
+    width: 45%;
+}
+
+.sar-20 .quaintin {width: 20%}
+.sar-20 .quaintout {width: 80%}
+
+.sar-40 .quaintin {width: 40%}
+.sar-60 .quaintout {width: 60%}
+
+.sar-60 .quaintin {width: 60%}
+.sar-60 .quaintout {width: 40%}
+
+.sar-80 .quaintin {width: 80%}
+.sar-80 .quaintout {width: 20%}
+
+
+
+
+/* .quaintio { */
+/*     background-color: #f8f8ff; */
+/*     border-left: 4px solid #41727b; */
+/*     padding-left: 5px; */
+/* } */
+
+/* .quaintin, .quaintout { */
+/*     padding: 5px; */
+/* } */
+
+/* .quaintin > span, .quaintout > span { */
+/*     display: inline-block; */
+/*     vertical-align: top; */
+/*     /\* padding-left: 5px; *\/ */
+/*     /\* margin-left: 10px; *\/ */
+/*     margin-bottom: 5px; */
+/* } */
+
+/* .quaintin > span pre { */
+/*     margin-top: 0px; */
+/*     margin-bottom: 0px; */
+/* } */
+
+/* .quaintin > span { */
+/*     /\* border-left: 4px solid red; *\/ */
+/* } */
+
+/* .quaintout > span { */
+/*     /\* border-left: 4px solid blue; *\/ */
+/*     width: 700px; */
+/* } */
+
+/* .quaintin:before { */
+/*     content: "In"; */
+/* } */
+
+/* .quaintout:before { */
+/*     content: "Out"; */
+/* } */
+
+/* .quaintin:before, .quaintout:before { */
+/*     display: inline-block; */
+/*     width: 50px; */
+/*     font-weight: bold; */
+/*     color: #41727b; */
+/* } */
 
 .warning {
     padding: 10px;

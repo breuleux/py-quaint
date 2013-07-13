@@ -342,11 +342,11 @@ def code_block(engine, node, lang, code):
                Markup('</pre></div>'))
 
 def show_and_run(engine, node, code):
-    return Gen(Markup('<div class="quaintin"><span>'),
+    return Gen(Markup('<div class="quaintio"><div class="quaintin"><span>'),
                code_block(engine, node, "quaint", code),
                Markup('</span></div><div class="quaintout"><span>'),
                engine(code),
-               Markup('</span></div>'))
+               Markup('</span></div></div>'))
 
 def show_as_and_run(lang):
     def f(engine, node, code):
@@ -469,6 +469,9 @@ def extract_props(node, results):
     elif ast.is_square_bracket(node):
         extract_props(node.args[1], results)
 
+    elif ast.is_void(node):
+        results['tag'] = 'div'
+
     else:
         raise Exception("Unknown directive", node)
 
@@ -492,6 +495,9 @@ def domnode(engine, node, tag, body):
 
 def css(engine, node, x):
     return GenFor('css', x.raw())
+
+def js(engine, node, x):
+    return GenFor('js', x.raw())
 
 def html(engine, node, code):
     if ast.is_square_bracket(code):

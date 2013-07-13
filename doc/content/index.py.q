@@ -4,7 +4,50 @@
   author: Olivier Breuleux
 
 
-{toc}
+.tabbed ..
+  ..
+    .. Superscript
+    .. Wiki
+    .. Multiplication
+    .. Table of contents
+  ..
+    .sar-60 ..
+      {show_and_run}:
+        {engine["other ^ expr"] = wrapper("sup")}
+
+        3^2 + 4^2 = 5^2
+
+    .sar-60 ..
+      {show_and_run}:
+        {
+          @link_type('wiki')
+          def wiki_link(engine, node, text, link):
+            return {'href':'//wikipedia.org/wiki/%s'
+                           % link.raw()}
+          engine["maybe text // link"] = wiki_link
+        }
+
+        I eat //pasta with [toothed utensils]//fork.
+
+    .sar-60 ..
+      {show_and_run}:
+        __ Multiplication table
+        {css}:
+          .mtab td {
+            width: 10px;
+            font-size: 10pt;
+          }
+        .mtab ..
+          {
+            Table(*[[i * j
+                     for i in range(1, 10)]
+                    for j in range(1, 10)])
+          }
+
+    .sar-20 ..
+      {show_and_run}:
+        {toc}
+
 
 .warning ..
   Quaint is still in alpha. I give myself the leeway to change some
@@ -54,10 +97,12 @@ page, there should be a link pointing to its source code.
 Installing
 ==========
 
-You can install the `quaint package through `pip or `easy-install.
+You can install the `quaint package through `pip or `easy-install
+(note: Quaint is only for Python 3 at the moment, so use the Python 3
+installer (might be pip-3.2 or something like that))
 
 bash %
-  pip install quaint
+  sudo pip install git+git://github.com/breuleux/quaint.git
 
 This will install a command called `quaint, which you can try
 immediately on an example (which we will fetch from the repository):
@@ -151,3 +196,37 @@ Learn more
 
 {html}:
   <a href="https://github.com/breuleux/quaint"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
+
+
+
+
+{js}:
+    function show_tab(tabs, elems, j) {
+        return function() {
+            for (var i = 0; i < tabs.children.length; i++) {
+                if (i == j) {
+                    tabs.children[i].className = "active";
+                    elems.children[i].style.display = "block";
+                }
+                else {
+                    tabs.children[i].className = "";
+                    elems.children[i].style.display = "none";
+                }
+            }
+        };
+    }
+    function convert_tabdiv(tabdiv) {
+        var tabs = tabdiv.children[0];
+        var elems = tabdiv.children[1];
+        tabs.className = "tabs";
+        for (var i = 0; i < tabs.children.length; i++)
+            tabs.children[i].onclick = show_tab(tabs, elems, i);
+        show_tab(tabs, elems, 0)();
+    }
+    function convert_all_tabdivs(classname) {
+        var elements = document.getElementsByClassName(classname)
+        for (var i = 0; i < elements.length; i++)
+            convert_tabdiv(elements[i]);
+    }
+    convert_all_tabdivs("tabbed");
+
