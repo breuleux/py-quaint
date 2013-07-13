@@ -223,68 +223,33 @@ table.show_args {
 }
 
 .sar-20 .quaintin {width: 20%}
-.sar-20 .quaintout {width: 80%}
+.sar-20 .quaintout {width: 70%}
 
-.sar-40 .quaintin {width: 40%}
-.sar-60 .quaintout {width: 60%}
+.sar-40 .quaintin {width: 30%}
+.sar-40 .quaintout {width: 60%}
 
 .sar-60 .quaintin {width: 60%}
-.sar-60 .quaintout {width: 40%}
+.sar-60 .quaintout {width: 30%}
 
-.sar-80 .quaintin {width: 80%}
+.sar-80 .quaintin {width: 70%}
 .sar-80 .quaintout {width: 20%}
 
+.sar-vstack .quaintio {
+    -webkit-box-orient: vertical;
+    -moz-box-orient: vertical;
+    box-orient: vertical;
+}
+.sar-vstack .quaintin {
+    border-right: none;
+    border-bottom: 4px solid #bbd;
+    width: 90%
+}
+.sar-vstack .quaintout {width: 90%}
 
-
-
-/* .quaintio { */
-/*     background-color: #f8f8ff; */
-/*     border-left: 4px solid #41727b; */
-/*     padding-left: 5px; */
-/* } */
-
-/* .quaintin, .quaintout { */
-/*     padding: 5px; */
-/* } */
-
-/* .quaintin > span, .quaintout > span { */
-/*     display: inline-block; */
-/*     vertical-align: top; */
-/*     /\* padding-left: 5px; *\/ */
-/*     /\* margin-left: 10px; *\/ */
-/*     margin-bottom: 5px; */
-/* } */
-
-/* .quaintin > span pre { */
-/*     margin-top: 0px; */
-/*     margin-bottom: 0px; */
-/* } */
-
-/* .quaintin > span { */
-/*     /\* border-left: 4px solid red; *\/ */
-/* } */
-
-/* .quaintout > span { */
-/*     /\* border-left: 4px solid blue; *\/ */
-/*     width: 700px; */
-/* } */
-
-/* .quaintin:before { */
-/*     content: "In"; */
-/* } */
-
-/* .quaintout:before { */
-/*     content: "Out"; */
-/* } */
-
-/* .quaintin:before, .quaintout:before { */
-/*     display: inline-block; */
-/*     width: 50px; */
-/*     font-weight: bold; */
-/*     color: #41727b; */
-/* } */
 
 .warning {
+    margin-top: 10px;
+    margin-bottom: 10px;
     padding: 10px;
     color: #500;
     background-color: #fdd;    
