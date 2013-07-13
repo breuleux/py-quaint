@@ -16,6 +16,8 @@ from .ast import (
     collapse,
     source,
     source_nows,
+    whitespace_left,
+    whitespace_right
     )
 from .engine import (
     codehl,
@@ -42,9 +44,9 @@ except ImportError:
 def wrap_whitespace(f):
     def f2(engine, node, *args, **kwargs):
         result = f(engine, node, *args, **kwargs)
-        rval = Gen(Text(node.whitespace_left),
+        rval = Gen(Text(whitespace_left(node)),
                    result,
-                   Text(node.whitespace_right))
+                   Text(whitespace_right(node)))
         if hasattr(result, 'block'):
             rval.block = result.block
         return rval
@@ -136,6 +138,11 @@ def wrapper(tag = "span", **attributes):
         dict(arg = "expr",
              tag = tag,
              **attributes))
+
+
+def wrap(gen, tag = "span", **attributes):
+    return wrapper(tag, **attributes)((lambda x: x), None, gen)
+
 
 
 

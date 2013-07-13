@@ -48,7 +48,7 @@ class ListDocument:
         return rval
 
 
-class RepoDocument:
+class DictDocument:
 
     def __init__(self):
         self.data = {}
@@ -152,13 +152,13 @@ document_types = dict(
     html = HTMLDocument,
     css = CSSDocument,
     js = JSDocument,
-    links = RepoDocument,
+    links = DictDocument,
     xlinks = XLinksDocument,
     sections = SectionsDocument,
-    meta = RepoDocument,
+    meta = DictDocument,
     errors = ErrorsDocument,
-    files = RepoDocument,
-    globalinfo = RepoDocument,
+    files = DictDocument,
+    globalinfo = DictDocument,
     )
 
 def make_documents(*names, **others):

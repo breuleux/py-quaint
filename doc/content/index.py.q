@@ -37,14 +37,13 @@
         __ Multiplication table
         {css}:
           .mtab td {
-            width: 10px;
+            text-align: right;
             font-size: 10pt;
           }
         .mtab ..
           {
-            Table(*[[i * j
-                     for i in range(1, 10)]
-                    for j in range(1, 10)])
+            Table(*[[i * j for i in range(1, 11)]
+                    for j in range(1, 11)])
           }
 
     .sar-20 ..

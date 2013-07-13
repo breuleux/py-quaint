@@ -147,17 +147,17 @@ def source_nows(node):
     else:
         return node.raw()
 
-def whitespace_before(node):
-    if isinstance(node, str) and not hasattr(node, 'whitespace_before'):
+def whitespace_left(node):
+    if not hasattr(node, 'whitespace_left'):
         return ""
     else:
-        return node.whitespace_before
+        return node.whitespace_left
 
-def whitespace_after(node):
-    if isinstance(node, str) and not hasattr(node, 'whitespace_after'):
+def whitespace_right(node):
+    if not hasattr(node, 'whitespace_right'):
         return ""
     else:
-        return node.whitespace_after
+        return node.whitespace_right
 
 def collapse(expr, op):
     results = []
