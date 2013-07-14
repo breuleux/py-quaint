@@ -25,7 +25,7 @@ from timeit import timeit
 from quaint import engine, extensions as qex
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
-from quaint.builders import default_engine, safe_engine
+from quaint.builders import default_engine, safe_engine, strip_ext
 from quaint.interface import full_html, site, fullhtml_template
 
 import yaml
@@ -134,11 +134,7 @@ def html_name(outroot, path = None):
         dest = outroot
     else:
         dest = pj(outroot, path)
-    if dest.endswith('.py.q'):
-        dest = dest[:-5] + '.html'
-    elif dest.endswith('.q'):
-        dest = dest[:-2] + '.html'
-    return dest
+    return strip_ext(dest) + '.html'
 
 def _site_generate_all(root, outroot, files, extensions, engine):
 

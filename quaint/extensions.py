@@ -4,6 +4,7 @@ from .engine import Once
 from .lib import link_type, plain_or_code, Gen, GenFor
 from .builders import HTMLMetaNode
 from .ast import source_nows
+from .util import format_anchor
 
 
 def use_assets(engine, path = 'assets/'):
@@ -35,4 +36,27 @@ def use_assets(engine, path = 'assets/'):
 
 def extend_environment(engine, env):
     engine.environment.update(env)
+
+def siteroot(engine, root = '/'):
+
+    @link_type('site')
+    def site_link(engine, node, text, link):
+        link = plain_or_code(engine, link)
+        return {'href': format_site_link(link)}
+
+    def format_site_link(link, raw = False):
+        if not raw:
+            link = format_anchor(link)
+            if not link.endswith('/'):
+                link += '.html'
+        return root + link
+
+    engine.extend_environment(
+        siteroot = root,
+        site_link = site_link,
+        format_site_link = format_site_link
+        )
+
+
+
 

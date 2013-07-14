@@ -159,7 +159,7 @@ def raw(engine, node):
 
 def juxt(engine, node, **_):
     if all(isinstance(child, str) for child in node.args):
-        return Text(node.location.get())
+        return Text(source(node))
     else:
         return Gen(node.whitespace_left,
                    Gen(*map(engine, node.args)),

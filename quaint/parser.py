@@ -116,7 +116,6 @@ standard_matchers = [
     # Generic
     (chr_op1, mkre(rx_choice(chr_op1) + "+"), True, m_operator("?fix")),
     (',', mkre(rx_choice([','])), True, m_operator("infix")),
-    # ('.', mkre(rx_choice(['.']) + "+"), True, m_operator("?fix")),
 
     # Rest
     (True, mkre(r"(?<=[ ~\n])[ ~]*(\\\\|\\{chr}|{nochr}|[ ~])+(?=[ ~\n]+)".format(
@@ -127,10 +126,6 @@ standard_matchers = [
                 chr = rx_choice(all_op + [" "]),
                 nochr = rx_choice(all_op + [" "], negate = True))),
      True, m_id),
-
-    # (True, mkre(rx_choice(all_op, negate = True) + "*"
-    #             + rx_choice(all_op + [" "], negate = True)),
-    #  True, m_id),
 
     # Don't put anything here. It won't be reached.
 ]

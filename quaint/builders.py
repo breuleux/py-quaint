@@ -194,6 +194,14 @@ class HTMLMetaNode(mod_engine.MetaNode):
 
 
 
+def strip_ext(path):
+    if path.endswith('.py.q'):
+        return path[:-5]
+    elif path.endswith('.q'):
+        return path[:-2]
+    else:
+        return path
+
 class MultiMetaNode(mod_engine.MetaNode):
     def process(self, engine, docs, nodes):
         return MultiDocumentGenerator(
@@ -205,15 +213,17 @@ class MultiDocumentGenerator(mod_engine.Generator):
 
     def __init__(self, docnames, gens):
         self.docnames = set(docnames)
-        self.gens = gens
+        self.gens = [(strip_ext(name), name, gen)
+                     for name, gen in gens]
 
     def docmaps(self, current):
         mydocs = dict(current)
         rval = [(mydocs, self, self.deps(), self.generators())]
-        for name, gen in self.gens:
+        for name, realname, gen in self.gens:
             subdocs = dict(current)
             subdocs.update(document.make_documents('html', *self.docnames))
             if 'meta' in self.docnames:
+                subdocs['meta']['realpath'] = realname
                 subdocs['meta']['path'] = name
             rval += gen.docmaps(subdocs)
             for docname, doc in subdocs.items():
@@ -223,18 +233,18 @@ class MultiDocumentGenerator(mod_engine.Generator):
     def deps(self):
         return {'globalinfo': {'_' + docname + '_' + name
                                for docname in self.docnames
-                               for name, _ in self.gens},
-                'files': {'_html_' + name for name, _ in self.gens}}
+                               for name, _, _ in self.gens},
+                'files': {'_html_' + name for name, _, _ in self.gens}}
 
     def generate_globalinfo(self, docs):
         dest = docs['globalinfo']
-        for name, gen in self.gens:
+        for name, realname, gen in self.gens:
             dest[name] = {}
             for docname in self.docnames:
                 dest[name][docname] = docs['_' + docname + '_' + name]
 
     def generate_files(self, docs):
         dest = docs['files']
-        for name, gen in self.gens:
+        for name, realname, gen in self.gens:
             dest[name] = docs['_html_' + name]
 
