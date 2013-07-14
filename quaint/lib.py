@@ -151,7 +151,9 @@ def text(engine, node):
         node = node.whitespace_left + node.raw() + node.whitespace_right
     return Text(node)
 
-def raw(engine, node):
+def raw(engine, node, target = None):
+    if target is not None:
+        node = target
     if isinstance(node, ast.AST):
         node = node.whitespace_left + node.raw() + node.whitespace_right
     return Raw(node)

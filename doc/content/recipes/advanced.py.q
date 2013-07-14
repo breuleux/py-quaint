@@ -8,6 +8,8 @@ The following will be useful to you if you want to really take
 advantage of Quaint. Most code listed here embeds Python and should
 therefore be placed in files with the `.py.q extension.
 
+Also see __basic@@recipes/ and __expert@@recipes/expert recipes!
+
 {toc}
 
 Comments
@@ -38,6 +40,7 @@ You can embed raw HTML with `[{html}:] (and CSS with `[{css}:])
       .blue {border: 4px solid blue}
       .red {border: 4px solid red}
       .green {border: 4px solid green}
+
     {html}:
       <div class="blue" id="box1">
         <div class="red">
@@ -82,9 +85,10 @@ file.
 
 Link@@recipes/subdoc to the included file.
 
-__Tip: the `[__file__] environment variable contains the path of the
-Quaint source file. Use `[engine.open(file)] to open a file in the
-same directory.
+.tip ..
+  The `[__file__] environment variable contains the path of the Quaint
+  source file. Use `[engine.open(file)] to open a file in the same
+  directory.
 
 
 Wrappers

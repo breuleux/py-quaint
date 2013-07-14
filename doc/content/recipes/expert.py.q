@@ -4,6 +4,8 @@
     author: Olivier Breuleux
 
 
+Also see __basic@@recipes/ and __advanced@@recipes/advanced recipes!
+
 {toc}
 
 Post-processing

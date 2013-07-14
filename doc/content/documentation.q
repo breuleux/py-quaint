@@ -4,8 +4,9 @@
   author: Olivier Breuleux
 
 
+For the time being the following two topics are documented. More will
+follow, but these are arguably the basics.
 
-* Advanced topics
-  * @@Syntax
-  * [Extending Quaint]@@extending
+* @@Syntax
+* [Extending Quaint]@@extending
 

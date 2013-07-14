@@ -7,7 +7,7 @@
 html ..
 
   head ..
-    meta [http-equiv = Content-type] [content = [text/html; charset=UTF-8]] ..
+    meta [http-equiv = Content-type] [content = text/html; charset=UTF-8] ..
     {insert_document}: xlinks
     title ..
       {meta}: title
@@ -34,7 +34,7 @@ html ..
         {ghdocurl = "https://raw.github.com/breuleux/quaint/master/doc/content/"}
         {
           GenFrom('meta', lambda d: ('<a href="%s%s">Source for this file</a>'
-                                     % (ghdocurl, d['path'])))
+                                     % (ghdocurl, d['realpath'])))
         }
 
     {insert_document}: js
