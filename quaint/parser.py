@@ -16,11 +16,11 @@ from . import ast
 
 # Characters that define operators
 chr_op1 = r"""
-+ - * / ^ = % # $ @ & | ! ? _ ` < > ; :
++ - * / ^ = % # $ @ & | ! ? _ ` < > ; : .
 """.split()
 
 chr_op2 = r"""
-, .
+,
 """.split()
 
 chr_op = chr_op1 + chr_op2
@@ -116,9 +116,13 @@ standard_matchers = [
     # Generic
     (chr_op1, mkre(rx_choice(chr_op1) + "+"), True, m_operator("?fix")),
     (',', mkre(rx_choice([','])), True, m_operator("infix")),
-    ('.', mkre(rx_choice(['.']) + "+"), True, m_operator("?fix")),
+    # ('.', mkre(rx_choice(['.']) + "+"), True, m_operator("?fix")),
 
     # Rest
+    (True, mkre(r"(?<=[ ~\n])[ ~]*(\\\\|\\{chr}|{nochr}|[ ~])+(?=[ ~\n]+)".format(
+                chr = rx_choice(all_op + [" "]),
+                nochr = rx_choice(all_op + [" "], negate = True))),
+     True, m_id),
     (True, mkre(r"(\\\\|\\{chr}|{nochr})+".format(
                 chr = rx_choice(all_op + [" "]),
                 nochr = rx_choice(all_op + [" "], negate = True))),

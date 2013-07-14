@@ -99,6 +99,9 @@ default_bindings = bare_bindings + [
     ('name <= maybe type :: file', 'load_in_var'),
     ('name <= file', 'load_in_var'),
 
+    # Juxtaposition
+    ((('', None, None), 'x'), 'juxt'),
+
     ]
 
 def apply_bindings(bindings, engine):
@@ -133,7 +136,7 @@ def default_engine(error_handler = mod_engine.inline_error_handler,
 
 
 def safe_environment():
-    safe = """raw text op
+    safe = """raw text op juxt
 paragraph blocks indent
 bracket parens
 em strong
@@ -142,7 +145,7 @@ code code_block
 header1 header2 header3 header4 header5 header6
 ulist olist dlist
 table_header table_row
-domnode quote ignore setvar load_in_var
+domnode quote ignore setvar load_in_var ifthenelse
 toc
 meta html css json yaml show_args include
 insert_document

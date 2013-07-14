@@ -157,6 +157,15 @@ def raw(engine, node):
     return Raw(node)
 
 
+def juxt(engine, node, **_):
+    if all(isinstance(child, str) for child in node.args):
+        return Text(node.location.get())
+    else:
+        return Gen(node.whitespace_left,
+                   Gen(*map(engine, node.args)),
+                   node.whitespace_right)
+
+
 @wrap_whitespace
 def op(engine, node, **_):
     args = [engine(node.args[0])]
@@ -188,6 +197,8 @@ def indent(engine, node, i):
     return Gen(*map(engine, contents))
 
 def paragraph(engine, node, par):
+    if all(isinstance(x, str) for x in par.args):
+        return Text("\n".join(par.args))
     contents = [engine(x) for x in par.args]
     # contents = [x if hasattr(x, 'merge') else Paragraph([x], True)
     #             for x in contents]
@@ -620,7 +631,9 @@ def include(engine, node, file):
     return engine(parse(engine.open(source_nows(file)).read()))
 
 def insert_document(engine, node, docname):
-    return GenFrom(source_nows(docname), lambda doc: doc.format_html())
+    def fmt(doc):
+        return doc.format_html()
+    return GenFrom(source_nows(docname), fmt)
 
 
 def transgen(target, sources):
