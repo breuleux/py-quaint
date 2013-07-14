@@ -1,5 +1,13 @@
 
+/*
+  Style for the errors encountered while processing.
+*/
+
+
+/* At the error location */
+
 .error {
+    white-space: pre;
     border-bottom: 2px solid red;
 }
 
@@ -7,6 +15,9 @@
     font-weight: bold;
     color: red;
 }
+
+
+/* Style for the full report at the bottom */
 
 .err_reports {
     width: 800px;

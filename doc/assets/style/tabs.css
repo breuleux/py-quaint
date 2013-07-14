@@ -1,0 +1,23 @@
+
+/*
+  Style for tabbed boxes.
+*/
+
+.tabs > .active {
+    background-color: #eef;
+    font-weight: bold;
+}
+
+.tabs > .active {
+    background-color: #eef;
+    color: #000;
+    font-weight: bold;
+}
+
+.tabs > div {
+    padding: 5px;
+    margin-right: 5px;
+    display: inline-block;
+    background-color: #41727b;
+    color: #fff;
+}

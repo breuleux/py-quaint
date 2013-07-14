@@ -1,0 +1,60 @@
+
+/*
+  Just a bunch of neat boxes.
+*/
+
+.warning, .note, .tip,
+.redbox, .greenbox, .bluebox,
+.yellowbox, .magentabox, .cyanbox {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+}
+
+.warning:before {
+    content: "Warning: ";
+    font-weight: bold;
+}
+
+.note:before {
+    content: "Note: ";
+    font-weight: bold;
+}
+
+.tip:before {
+    content: "Tip: ";
+    font-weight: bold;
+}
+
+
+.redbox, .warning {
+    color: #500;
+    background-color: #fdd;    
+}
+
+.bluebox, .tip {
+    color: #005;
+    background-color: #ddf;
+}
+
+.greenbox {
+    color: #050;
+    background-color: #dfd;
+}
+
+
+.yellowbox, .note {
+    color: #550;
+    background-color: #ffd;    
+}
+
+.magentabox {
+    color: #505;
+    background-color: #fdf;
+}
+
+.cyanbox {
+    color: #055;
+    background-color: #dff;
+}
+

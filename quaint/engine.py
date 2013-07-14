@@ -419,11 +419,30 @@ class Text(Generator):
         return str(self)
 
 
+class Escaped(Generator):
+
+    def __init__(self, text):
+        self.text = str(text)
+
+    def generate_text(self, docs):
+        docs['text'].add(self.text)
+
+    def generate_html(self, docs):
+        docs['html'].add(cgi.escape(self.text))
+
+    def __str__(self):
+        return 'Escaped(%s)' % self.text
+
+    def __repr__(self):
+        return str(self)
+
+
+
 class ProxyGenerator(Generator):
 
     def __init__(self, element):
         if not isinstance(element, Generator):
-            element = Text(element)
+            element = Escaped(element)
         self.element = element
 
     def docmaps(self, current):
@@ -438,7 +457,7 @@ class PartsGenerator(Generator):
         results = [(current, self, self.deps(), self.generators())]
         for child in self.parts():
             if not isinstance(child, Generator):
-                child = Text(child)
+                child = Escaped(child)
             results += child.docmaps(current)
         return results
 

@@ -22,7 +22,7 @@ from .ast import (
 from .engine import (
     codehl,
     Generator,
-    Raw, Text, Markup,
+    Raw, Text, Escaped, Markup,
     TransGen, GenFor, GenFrom,
     List, Definitions, Table, TableHeader,
     Gen,
@@ -248,14 +248,15 @@ def plain_or_code(engine, node):
     if ast.is_curly_bracket(node):
         return str(pyeval(node.args[1].raw(), engine.environment))
     elif ast.is_square_bracket(node):
-        return node.args[1].raw()
+        x = node.args[1]
+        return x.raw()
     else:
         return node.raw()
 
 
 def parse_link(link):
     if '/' in link or '.' in link:
-        return Text(link)
+        return Escaped(link)
     else:
         def get(links):
             return links.get(format_anchor(link), link)
@@ -426,7 +427,7 @@ def safe_eval(engine, node, body):
     if isinstance(x, (ast.ASTNode, ast.quaintstr)):
         x = engine(x)
     elif not isinstance(x, Generator):
-        x = Text(str(x))
+        x = Escaped(str(x))
     return x
 
 @wrap_whitespace
@@ -452,7 +453,7 @@ def eval(engine, node, body):
         elif x in (False, None):
             x = Text("")
         elif not isinstance(x, Generator):
-            x = Text(str(x))
+            x = Escaped(str(x))
 
     return x
 

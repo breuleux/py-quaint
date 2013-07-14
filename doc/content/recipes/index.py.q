@@ -8,7 +8,7 @@
 {js}:
     convert_all_tabdivs("tabbed");
 
-See also __advanced::q:recipes/advanced and __expert::q:recipes/expert
+See also __advanced@@recipes/advanced and __expert@@recipes/expert
 recipes!
 
 {toc}

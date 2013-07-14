@@ -6,7 +6,7 @@ ASSETSDIR=$(BASEDIR)/assets
 URL=/
 
 html: assets
-	quaint site $(DOCDIR) -o $(OUTPUTDIR) -x "use_assets($(URL)assets)" -e "siteroot: '$(URL)'"
+	quaint site $(DOCDIR) -o $(OUTPUTDIR) -x "use_assets($(URL)assets),siteroot($(URL))"
 
 assets: output
 	cp -r $(ASSETSDIR) $(OUTPUTDIR)

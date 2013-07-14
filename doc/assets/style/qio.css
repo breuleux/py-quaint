@@ -1,0 +1,67 @@
+
+/*
+  Style for the output of {show_and_run}:
+  .quaintio is the whole output
+  .quaintin is a piece of Quaint code
+  .quaintout is the result of evaluating that code
+*/
+
+
+/* Two columns */
+
+.quaintio {
+    display: -webkit-flex;
+    display: -moz-flex;
+    display: -ms-flexbox;
+    display: flex;
+
+    background-color: #eef;
+}
+
+.quaintin {
+    border-right: 4px solid #bbd;
+    padding: 5px;
+    width: 45%;
+}
+
+.quaintout {
+    padding: 5px;
+    width: 45%;
+}
+
+/* Adjustments for the relative width of input vs output */
+
+.sar-20 .quaintin {width: 20%}
+.sar-20 .quaintout {width: 70%}
+
+.sar-40 .quaintin {width: 30%}
+.sar-40 .quaintout {width: 60%}
+
+.sar-60 .quaintin {width: 60%}
+.sar-60 .quaintout {width: 30%}
+
+.sar-80 .quaintin {width: 70%}
+.sar-80 .quaintout {width: 20%}
+
+.sar-100 .quaintin {width: 90%}
+.sar-100 .quaintout {display: none}
+
+
+/* Two rows */
+
+.sar-vstack .quaintio {
+    -webkit-flex-direction: column;
+    -moz-flex-direction: column;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+.sar-vstack .quaintin {
+    border-right: none;
+    border-bottom: 4px solid #bbd;
+    width: 90%
+}
+.sar-vstack .quaintout {
+    width: 90%
+}
+
+

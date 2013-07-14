@@ -16,13 +16,14 @@ before anything that needs it, and so on.
 
 Here's how to list all of your document's meta-information:
 
-{show_and_run}:
-  {genfrom("meta")}:
-    row <- | {key.capitalize()} | {value} |
-    {
-      AutoMerge([engine(row, key=key, value=value)
-                 for key, value in sorted(meta.data.items())])
-    }
+.sar-vstack ..
+  {show_and_run}:
+    {genfrom("meta")}:
+      row <- | {key.capitalize()} | {value} |
+      {
+        AutoMerge([engine(row, key=key, value=value)
+                   for key, value in sorted(meta.data.items())])
+      }
 
 `AutoMerge is needed to put the rows together (otherwise you will
 create a different table for each row).
@@ -40,16 +41,17 @@ Better yet, if you do site generation, there will be a document called
 `globalinfo containing the information of _all documents. Let's list
 their titles:
 
-{show_and_run}:
-  {genfrom("globalinfo")}:
-    row <- | {path} | {title}::{link} |
-    {
-      AutoMerge([engine(row,
-                        path = path,
-                        link = html_name(siteroot, path),
-                        title = docs['meta'].get('title', "untitled"))
-                 for path, docs in sorted(globalinfo.data.items())])
-    }
+.sar-vstack ..
+  {show_and_run}:
+    {genfrom("globalinfo")}:
+      row <- | {path} | {title}::{link} |
+      {
+        AutoMerge([engine(row,
+                          path = path,
+                          link = html_name(siteroot, path),
+                          title = docs['meta'].get('title', "untitled"))
+                   for path, docs in sorted(globalinfo.data.items())])
+      }
 
 `siteroot is an environment variable that you can set with the `[-e]
 flag to the `quaint command. See the Makefile::{ghurl + 'doc/Makefile'}

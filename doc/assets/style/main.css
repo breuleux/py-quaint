@@ -1,48 +1,34 @@
 
-@import url("http://fonts.googleapis.com/css?family=Oswald:700|Open+Sans");
-@import url("quaint.css");
-@import url("errors.css");
+@import url("http://fonts.googleapis.com/css?family=Oswald:400,700|Open+Sans");
+@import url("nav.css");
+@import url("boxes.css");
 @import url("pygments.css");
+@import url("qio.css");
+@import url("tabs.css");
+@import url("errors.css");
+@import url("misc.css");
 
 
-.body, h1.title {
-    width: 840px;
-}
-
-#main {
-    width: 800px;
-}
-
+/* BODY */
 
 body {
-    background-color: #fff;
-    font-family: 'Open Sans', 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    /* text-align: justify; */
-}
-
-.body {
-    background: #f1decb;
+    width: 900px;
     margin: auto;
-    padding-top: 30px;
-    padding-left: 30px;
-    padding-right: 30px;
-    padding-bottom: 30px;
-}
-
-.buffer {
-    height: 1px;
+    font-family: 'Open Sans', 'Trebuchet MS', Trebuchet, 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    background-color: #fff;
 }
 
 #main {
-    background: #fff;
+    background-color: #fff;
     padding-top: 10px;
     padding-bottom: 10px;
     padding-left: 20px;
     padding-right: 20px;
+    border: 30px solid #f1decb;
 }
 
+
+/* HEADERS */
 
 h1.title {
     color: #41727b;
@@ -62,19 +48,13 @@ h1, h2, h3, h4, h5, h6 {
     padding-left: 10px;
 }
 
-/* h1, h2 { */
-/*     padding-top: 0.25em; */
-/* } */
-
 h1 {
     margin-left: -50px;
     margin-right: -50px;
     font-size: 2.3em;
     border-top: 4px solid black;
     border-bottom: 4px solid black;
-    /* background-color: #f0e0d0; */
     background-color: #c89767;
-    /* color: #fff; */
 }
 h2 {
     font-size: 2.0em;
@@ -86,6 +66,8 @@ h5 { font-size: 1.2em }
 h6 { font-size: 1.1em }
 
 
+/* LINKS */
+
 a {
     text-decoration: none;
     color: #00f;
@@ -95,11 +77,7 @@ a:hover {
     color: #00a;
 }
 
-
-ul {
-    list-style-type: disc;
-}
-
+/* CODE */
 
 code { background-color: #eee; }
 pre {
@@ -107,6 +85,14 @@ pre {
     padding: 5px;
 }
 
+/* LISTS */
+
+ul {
+    list-style-type: disc;
+}
+
+
+/* TABLES */
 
 table {
     border: 2px solid black;
@@ -134,6 +120,8 @@ table th, table td {
 }
 
 
+/* BLOCKQUOTE */
+
 div.quote {
     margin-top: 10px;
 }
@@ -159,6 +147,9 @@ blockquote blockquote {
     margin-left: 5px;
 }
 
+
+/* DEFINITIONS */
+
 dt {
     font-weight: bold;
 }
@@ -168,95 +159,3 @@ dd {
     margin-bottom: 10px;
 }
 
-table.show_args {
-    display: inline-block;
-    font-family: monospace;
-    vertical-align: middle;
-}
-
-
-.tabs > .active {
-    background-color: #eef;
-    font-weight: bold;
-}
-
-.tabs > .active {
-    background-color: #eef;
-    color: #000;
-    font-weight: bold;
-}
-
-.tabs > div {
-    padding: 5px;
-    margin-right: 5px;
-    display: inline-block;
-    background-color: #41727b;
-    color: #fff;
-}
-
-
-
-
-.quaintio {
-
-    display: -webkit-box;
-    -webkit-box-orient: horizontal;
-
-    display: -moz-box;
-    -moz-box-orient: horizontal;
-
-    display: box;
-    box-orient: horizontal;
-
-    background-color: #eef;
-}
-
-.quaintin {
-    border-right: 4px solid #bbd;
-    padding: 5px;
-    width: 45%;
-}
-
-.quaintout {
-    padding: 5px;
-    width: 45%;
-}
-
-.sar-20 .quaintin {width: 20%}
-.sar-20 .quaintout {width: 70%}
-
-.sar-40 .quaintin {width: 30%}
-.sar-40 .quaintout {width: 60%}
-
-.sar-60 .quaintin {width: 60%}
-.sar-60 .quaintout {width: 30%}
-
-.sar-80 .quaintin {width: 70%}
-.sar-80 .quaintout {width: 20%}
-
-.sar-vstack .quaintio {
-    -webkit-box-orient: vertical;
-    -moz-box-orient: vertical;
-    box-orient: vertical;
-}
-.sar-vstack .quaintin {
-    border-right: none;
-    border-bottom: 4px solid #bbd;
-    width: 90%
-}
-.sar-vstack .quaintout {width: 90%}
-
-
-.warning {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    padding: 10px;
-    color: #500;
-    background-color: #fdd;    
-}
-
-.warning:before {
-    content: "Warning: ";
-    color: #500;    
-    font-weight: bold;
-}

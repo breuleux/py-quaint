@@ -6,6 +6,6 @@
 
 
 * Advanced topics
-  * Syntax::q:syntax
-  * [Extending Quaint]::q:extending
+  * @@Syntax
+  * [Extending Quaint]@@extending
 

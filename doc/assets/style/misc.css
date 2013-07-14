@@ -1,0 +1,11 @@
+
+/*
+ Miscellaneous stuff
+*/
+
+table.show_args {
+    display: inline-block;
+    font-family: monospace;
+    vertical-align: middle;
+}
+

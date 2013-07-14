@@ -14,7 +14,7 @@ Comments
 --------
 
 Use `[;;] for comments. Note that `[;;] works like a normal operator
-(see the ::q:syntax), and comments out its right hand side.
+(see the @@syntax), and comments out its right hand side.
 
 .sar-60 ..
   {show_and_run}:
@@ -80,7 +80,7 @@ file.
 {show_and_run}:
   {include}: subdoc.q
 
-Link::q:recipes/subdoc to the included file.
+Link@@recipes/subdoc to the included file.
 
 __Tip: the `[__file__] environment variable contains the path of the
 Quaint source file. Use `[engine.open(file)] to open a file in the
