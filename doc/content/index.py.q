@@ -75,7 +75,7 @@ to their own individual needs.
   highlighting using Pygments, tables).
 
 * __[Embedded code]: you can embed Python code in a Quaint file (use
-  the extension `.py.q). For instance, you can procedurally generate
+  the extension `[.py.q]). For instance, you can procedurally generate
   lists or tables, write and test new extensions in a single file,
   etc. That can come in handy to generate documentation!
 
@@ -90,17 +90,19 @@ to their own individual needs.
   what you want to do is trivial (e.g. add a superscript operator),
   its implementation will be trivial (a single line of code).
 
-Quaint's file extension is `.q. As you might already have guessed, all
-of this documentation is written in Quaint. At the bottom of each
+Quaint's file extension is `[.q]. As you might already have guessed,
+all of this documentation is written in Quaint. At the bottom of each
 page, there should be a link pointing to its source code.
 
 
 Installing
 ==========
 
-You can install the `quaint package through `pip or `easy-install
-(note: Quaint is only for Python 3 at the moment, so use the Python 3
-installer (might be pip-3.2 or something like that))
+You can install the `quaint package through `pip (note: Quaint is only
+for Python 3 at the moment, so use the Python 3 installer (might be
+pip-3.2 or something like that)). For the time being you will have to
+install from the repository because I didn't upload it to the package
+index yet:
 
 bash %
   sudo pip install git+git://github.com/breuleux/quaint.git
@@ -156,7 +158,9 @@ structure will be preserved.
 * If Quaint finds a file called `[@template.q] or `[@template.py.q],
   it will use it as a template to generate all the documents in the
   directory (and subdirectories, unless they contain their own
-  template files). [Default template]::{ghurl + "quaint/default_template.q"}.
+  template files). The [default template]::{ghurl + "quaint/default_template.q"}
+  shows the basic required assembly (putting together the various
+  independent "tracks" various parts of the document contribute to).
 
 
 Programmatically

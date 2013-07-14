@@ -252,7 +252,7 @@ Where to write extensions
 You have two major choices here:
 
 * __Embed your extensions in a Quaint file. The extension should be
-  `.py.q to indicate the file may execute arbitrary code.
+  `[.py.q] to indicate the file may execute arbitrary code.
 
 * Write your extensions in a __[separate file] and tell Quaint to
   include it.
@@ -272,15 +272,13 @@ python %
       return Gen(engine(right), engine(left))
 
   @wrap_whitespace
-  def sup(engine, node, left, right = None):
-      if right is None:
-          left, right = "", left
+  def sup(engine, node, left, right):
       return Gen(engine(left), Raw("<sup>"), engine(right), Raw("</sup>"))
 
   def quaint_extend(engine):
       engine['left %% right'] = swap
       engine['maybe left ^ right'] = sup
-      engine.extend_environment(x = "banana", sup = sup)
+      engine.extend_environment(x = "banana")
 
 Its meaning should be straightforward, save for a few things...
 
@@ -288,11 +286,11 @@ Its meaning should be straightforward, save for a few things...
   of whitespace for you. It is recommended to use it for any operator
   that's meant to be used inline.
 
-* python`engine.extend_environment(x = "banana", sup = sup) modifies
-  the environment available to embedded code. It is equivalent to
-  embedding python`{x = "banana"; sup = sup}. If this extension is
-  loaded, `{x} will therefore generate "banana" and `[{sup}:abcd] will
-  have the same effect as `[^abcd].
+* python`engine.extend_environment(x = "banana") modifies the
+  environment available to embedded code. It is equivalent to
+  embedding python`{x = "banana"}. If this extension is loaded, `{x}
+  will therefore generate "banana". Useful values and functions can be
+  made available to embedded code that way.
 
 __Loading your extension:
 
@@ -324,5 +322,5 @@ __Loading your extension:
 
 * If your extension takes additional arguments after `engine, they can
   be specified on the command line like `[-x
-  extension(arg1,arg2,...)], or in a script by providing a tuple
+  'extension(arg1,arg2,...)'], or in a script by providing a tuple
   e.g. `[extensions = [(extension, [arg1, arg2, ...])]].
