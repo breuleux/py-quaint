@@ -28,8 +28,7 @@
 }
 
 .err_report {
-    padding: 20px;
-    background-color: faa;
+    border: 20px solid #faa;
 }
 
 .err_num {
@@ -38,7 +37,6 @@
 }
 
 .err_source {
-    background-color: white;
     border-bottom: 3px solid black;
 }
 
@@ -48,7 +46,6 @@
 }
 
 .err_exception {
-    background-color: white;
     padding: 5px;
     font-weight: bold;
 }
@@ -67,7 +64,6 @@
 }
 
 .err_traceback {
-    background-color: white;
     white-space: pre;
     padding: 5px;
 }
