@@ -363,11 +363,11 @@ def code_block(engine, node, lang, code):
                Markup('</pre></div>'))
 
 def show_and_run(engine, node, code):
-    return Gen(Markup('<div class="quaintio"><div class="quaintin"><span>'),
+    return Gen(Markup('<div class="quaintio"><div class="quaintin"><div>'),
                code_block(engine, node, "quaint", code),
-               Markup('</span></div><div class="quaintout"><span>'),
+               Markup('</div></div><div class="quaintout"><div>'),
                engine(code),
-               Markup('</span></div></div>'))
+               Markup('</div></div></div>'))
 
 def show_as_and_run(lang):
     def f(engine, node, code):
@@ -501,12 +501,19 @@ def extract_props(node, results):
     return results
 
 
+void_tags = ["area", "base", "br", "col", "command",
+             "embed", "hr", "img", "input", "keygen",
+             "link", "meta", "param", "source", "track", "wbr"]
+
 @wrap_whitespace
 def domnode(engine, node, tag, body):
     props = extract_props(tag, {'tag': 'div', 'class': set()})
     tagname = props.pop('tag')
     otag, ctag = make_tags(tagname, props, engine, [])
-    result = Gen(otag, engine(body), ctag)
+    if tagname in void_tags:
+        result = Gen(otag)
+    else:
+        result = Gen(otag, engine(body), ctag)
     if 'id' in props:
         result = Gen(GenFor('links', props['id'], '#'+props['id']), result)
     if tagname != 'span':

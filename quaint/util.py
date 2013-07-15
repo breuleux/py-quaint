@@ -1,6 +1,9 @@
 
 def format_anchor(s):
-    return s.lower().replace(' ', '-').replace('\n', '-').replace('~', '').replace('_', '-')
+    s = s.lower().replace(' ', '-').replace('\n', '-')
+    s = s.replace('~', '').replace('_', '-')
+    s = s.replace('"', '')
+    return s
 
 def dedent(code):
     lines = code.split("\n")

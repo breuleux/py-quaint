@@ -14,7 +14,7 @@ either a _word or an _operator. Any sequence of one or more of the
 following characters is a distinct operator:
 
 {from quaint.parser import chr_op}
-.pre .. {Raw(" ".join(chr_op))}
+.pre .. {Escaped(" ".join(chr_op))}
 
 For instance, `[+] is an operator, `[++] is an operator, `[/_%%] is an
 operator, and so on. You can _escape an operator character or a
@@ -25,7 +25,6 @@ instance. The `[/] operator take two arguments (left hand side and
 right hand side). In the following example, in [span .red]..red, I
 highlight the [span .lhs]..[left hand side], and in [span .blue]..blue,
 I highlight the [span .rhs]..[right hand side]:
-
 {
   # Did you think I was highlighting by hand? :)
   @wrap_whitespace
@@ -40,7 +39,6 @@ I highlight the [span .rhs]..[right hand side]:
       return Gen(Raw('<div class="pre">'), node.operator, engine(expr), Raw('</div>'))
   engine['## expr'] = pre
 }
-
 
 Operators bind tighter if there is no whitespace around them (__note:
 the (non-printing) `[~] character counts as whitespace).

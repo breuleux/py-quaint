@@ -1,9 +1,5 @@
 
-{
-  engine["maybe text @@ link"] = site_link
-}
-
-
+{html}:[<!DOCTYPE html>]
 html ..
 
   head ..
@@ -14,9 +10,11 @@ html ..
     {insert_document}: css
 
   body ..
-
+    {
+      engine["maybe text @@ link"] = site_link
+    }
     #nav ..
-      logo <- {Raw("<img src='%sassets/media/quaint.png' height=80px />" % siteroot)}
+      logo <- {Raw('<img src="%sassets/media/quaint.png" alt="Quaint" height="74" />' % siteroot)}
       #logo .. {logo}::site:index
       .navlink #doc .. Doc @@ documentation
       .navlink #recipes .. Recipes @@ recipes/
@@ -39,4 +37,3 @@ html ..
 
     {insert_document}: js
     {insert_document}: errors
-

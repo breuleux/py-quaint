@@ -539,18 +539,22 @@ class TOCGenerator(Generator):
     def deps(self):
         return {'html': 'sections'}
 
-    def format_section(self, s, results, bah):
+    def format_section(self, s, results, inul):
+        if inul:
+            results.append('<li>')
         if s.name is not None:
-            results += ['<li><a href="#',
+            results += ['<a href="#',
                         s.name,
                         '">',
                         s.contents.data,
-                        "</a></li>"]
+                        "</a>"]
         if s.subsections:
             results.append("<ul>")
             for subs in s.subsections:
                 self.format_section(subs, results, True)
             results.append("</ul>")
+        if inul:
+            results.append("</li>")
         return results
 
     def generate_html(self, docs):
@@ -729,10 +733,17 @@ class Paragraph(WrapGenerator):
 
     def __init__(self, children, can_merge = False):
         self.can_merge = can_merge
-        super().__init__(Markup("<p>"),
-                         Text("\n"),
-                         Markup("</p>"),
-                         children)
+        if not children or len(children) == 1 and ast.is_void(children[0]):
+            super().__init__(None, None, None, [])
+        else:
+            # super().__init__(Markup('<p>'),
+            #                  Text("\n"),
+            #                  Markup('</p>'),
+            #                  children)
+            super().__init__(Markup('<div class="paragraph">'),
+                             Text("\n"),
+                             Markup('</div>'),
+                             children)
 
     def merge(self, other):
         if self.can_merge and isinstance(other, Paragraph):
