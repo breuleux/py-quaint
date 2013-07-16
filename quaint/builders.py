@@ -59,13 +59,8 @@ default_bindings = bare_bindings + [
     ('__ expr', 'strong'),
 
     # Links
-    ('text @ maybe link', 'link'),
-    ('maybe text @ type ! maybe link', 'special_link'),
-    ('maybe text @# label', 'anchor'),
-
     ('text :: maybe link', 'link'),
     ('maybe text :: type : maybe link', 'special_link'),
-    ('maybe text :# label', 'anchor'),
 
     # Code
     ('maybe lang ` code', 'code'),
@@ -98,8 +93,8 @@ default_bindings = bare_bindings + [
     ('wide [maybe source >> quote]', 'quote'),
     ('maybe left ;; right', 'ignore'),
     ('name <- body', 'setvar'),
-    ('name <= maybe type :: file', 'load_in_var'),
     ('name <= file', 'load_in_var'),
+    ('name <= [maybe type] :: file', 'load_in_var'),
 
     ]
 

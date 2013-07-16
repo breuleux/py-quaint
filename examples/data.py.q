@@ -15,7 +15,7 @@ it in the variable `data, either of these statements will work:
 
 {show_and_run}:
   data <= yaml::data.yaml
-  data <= ::data.yaml
+  data <= data.yaml
   {data = pyyaml.safe_load(open("data.yaml").read())}
 
 The file name can also be a URL.
