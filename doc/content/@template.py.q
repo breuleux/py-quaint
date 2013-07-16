@@ -15,7 +15,7 @@ html ..
     }
     #nav ..
       logo <- {Raw('<img src="%sassets/media/quaint.png" alt="Quaint" height="74" />' % siteroot)}
-      #logo .. {logo}::site:index
+      #logo .. {logo} @@ index
       .navlink #doc .. Doc @@ documentation
       .navlink #recipes .. Recipes @@ recipes/
       .navlink #source .. Source::https://github.com/breuleux/quaint

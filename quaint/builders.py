@@ -40,6 +40,9 @@ bare_bindings = [
     # The outermost brackets are shed by create_pattern
     # so the following will match [body]
     ("[[body]]", 'bracket'),
+
+    # Juxtaposition
+    ((('', None, None), 'x'), 'juxt'),
     ]
 
 
@@ -99,9 +102,6 @@ default_bindings = bare_bindings + [
     ('name <= maybe type :: file', 'load_in_var'),
     ('name <= file', 'load_in_var'),
 
-    # Juxtaposition
-    ((('', None, None), 'x'), 'juxt'),
-
     ]
 
 def apply_bindings(bindings, engine):
@@ -118,12 +118,29 @@ def apply_bindings(bindings, engine):
     return engine
 
 
+
+def bare_environment():
+    safe = """text op paragraph blocks indent bracket juxt""".split()
+    env = {}
+    for k in safe:
+        env[k] = getattr(lib, k)
+    return env
+
+def bare_engine(error_handler = mod_engine.inline_error_handler,
+                bindings = bare_bindings):
+    engine = mod_engine.Engine(error_handler)
+    engine.environment = bare_environment()
+    apply_bindings(bindings, engine)
+    return engine
+
+
+
+
 def default_environment():
     env = {}
     for k in dir(lib):
         env[k] = getattr(lib, k)
     return env
-
 
 def default_engine(error_handler = mod_engine.inline_error_handler,
                    bindings = default_bindings):
@@ -135,7 +152,7 @@ def default_engine(error_handler = mod_engine.inline_error_handler,
 
 
 
-def safe_environment():
+def q_environment():
     safe = """raw text op juxt
 paragraph blocks indent
 bracket parens
@@ -158,10 +175,10 @@ insert_document
     env['feval'] = lib.safe_feval
     return env
 
-def safe_engine(error_handler = mod_engine.inline_error_handler,
-                bindings = default_bindings):
+def q_engine(error_handler = mod_engine.inline_error_handler,
+             bindings = default_bindings):
     engine = mod_engine.Engine(error_handler)
-    engine.environment = safe_environment()
+    engine.environment = q_environment()
     apply_bindings(bindings, engine)
     engine.environment['engine'] = engine
     return engine

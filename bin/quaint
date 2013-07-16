@@ -3,8 +3,8 @@
 """Quaint markup
 
 Usage:
-  quaint html [FILE | -s STR] [-o OUT] [--safe] [-x EXT] [-e ENV]
-  quaint site DIR -o OUT [--safe] [-x EXT] [-e ENV]
+  quaint html [FILE | -s STR] [-o OUT] [-x EXT] [-e ENV]
+  quaint site DIR -o OUT [-x EXT] [-e ENV]
 
 Arguments:
   FILE          Source file.
@@ -16,7 +16,6 @@ Options:
   -o OUT        Output the result in file OUT
   -x EXT        Comma-separated list of extensions to load.
   -e ENV        Comma-separated key: value pairs set as Quaint environment variables.
-  --safe        Do not allow arbitrary code execution in markup.
 """
 
 from docopt import docopt
@@ -25,7 +24,7 @@ from timeit import timeit
 from quaint import engine, extensions as qex
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
-from quaint.builders import default_engine, safe_engine, strip_ext
+from quaint.builders import default_engine, q_engine, strip_ext
 from quaint.interface import full_html, site, fullhtml_template
 
 import yaml
@@ -91,10 +90,10 @@ def get_ext(args):
 @needs_source
 def x_html(s, path, args):
 
-    if not args['--safe'] and (not path or path.endswith('.py.q')):
+    if not path or path.endswith('.py.q'):
         eng = default_engine()
     else:
-        eng = safe_engine()
+        eng = q_engine()
 
     ext = get_ext(args)
 
@@ -178,10 +177,7 @@ def x_site(args):
     docroot = args["DIR"]
     outroot = args["-o"]
 
-    if args['--safe']:
-        eng = safe_engine()
-    else:
-        eng = default_engine()
+    eng = default_engine()
 
     eng.environment['html_name'] = html_name
 

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-"""Quaint markup
+"""Don't use this, use quaint instead (this is quaint-dev)
 
 Usage:
   quaint (tok|ast) [FILE | -s STR]
@@ -28,7 +28,7 @@ from descr.util import Table, Group
 from quaint import engine
 from quaint.operparse import SyntaxError, Source
 from quaint.parser import tokenize, parse
-from quaint.builders import default_engine, safe_engine
+from quaint.builders import default_engine, q_engine
 from quaint.document import make_documents
 from quaint.interface import full_html, evaluate
 
@@ -105,7 +105,7 @@ def x_ast(s, path, args):
 #     if not args['--safe'] and (not path or path.endswith('.py.q')):
 #         eng = default_engine(engine.default_error_handler)
 #     else:
-#         eng = safe_engine(engine.default_error_handler)
+#         eng = q_engine(engine.default_error_handler)
 
 #     evaluate(ast, eng, documents)
 #     print(documents['text'].data)
@@ -120,7 +120,7 @@ def x_eval(s, path, args):
     if not args['--safe'] and (not path or path.endswith('.py.q')):
         eng = default_engine(engine.default_error_handler)
     else:
-        eng = safe_engine(engine.default_error_handler)
+        eng = q_engine(engine.default_error_handler)
 
     evaluate(ast, eng, documents)
     print("\x1B[?0;7y:h <div>" + documents['html'].data + "</div>\a")
@@ -131,7 +131,7 @@ def x_html(s, path, args):
     if not args['--safe'] and (not path or path.endswith('.py.q')):
         eng = default_engine()
     else:
-        eng = safe_engine()
+        eng = q_engine()
 
     if args['-x']:
         ext = args['-x'].split(",")
@@ -152,7 +152,7 @@ def x_site(args):
     if not args['--safe'] and (not path or path.endswith('.py.q')):
         eng = default_engine()
     else:
-        eng = safe_engine()
+        eng = q_engine()
 
     if args['-x']:
         ext = args['-x'].split(",")
@@ -181,7 +181,7 @@ def x_site(args):
 #     if not args['--safe'] and (not path or path.endswith('.py.q')):
 #         eng = default_engine()
 #     else:
-#         eng = safe_engine()
+#         eng = q_engine()
 
 #     evaluate(engine.HTMLMetaNode(ast), eng, documents)
 
@@ -197,7 +197,7 @@ def x_site(args):
     # if not args['--safe'] and (not path or path.endswith('.py.q')):
     #     eng = default_engine()
     # else:
-    #     eng = safe_engine()
+    #     eng = q_engine()
 
     # evaluate(ast, eng, documents)
 

@@ -60,6 +60,8 @@ class FromArg:
 
 
 def make_tags(tag, attributes, engine, args):
+    # Note: make_tags assumes that tag name and attribute names have
+    # been sanitized
     opening_tag = "<" + tag
     for attr, value in attributes.items():
         if attr == 'classes': attr = 'class'
@@ -73,7 +75,9 @@ def make_tags(tag, attributes, engine, args):
             else:
                 value = value.raw()
         if value:
-            opening_tag += ' %s="%s"' % (attr, value)
+            if value.startswith('"') and value.endswith('"'):
+                value = value[1:-1]
+            opening_tag += ' %s="%s"' % (attr, cgi.escape(value, True))
     opening_tag += ">"
     return Markup(opening_tag), Markup("</%s>" % tag)
 
@@ -196,7 +200,8 @@ def rawop(engine, node, **_):
 
 def indent(engine, node, i):
     contents = i.args
-    return Gen(*map(engine, contents))
+    return AutoMerge(list(map(engine, contents)))
+    # return Gen(*map(engine, contents))
 
 def paragraph(engine, node, par):
     if all(isinstance(x, str) for x in par.args):
