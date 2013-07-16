@@ -51,7 +51,6 @@ default_bindings = bare_bindings + [
     # Brackets
     # The outermost brackets are shed by create_pattern
     # so the following will match [body]
-    ("[[body]]", 'bracket'),
     ("{body}", 'eval'),
     ("{f}: x", 'feval'),
 

@@ -12,14 +12,15 @@
 }
 
 #logo {
-    padding: 10px;
-    padding-left: 30px;
-    padding-right: 30px;
-}
-
-#logo {
     float: left;
     background-color: #92785e;
+}
+
+#logo img {
+    padding: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 74px;
 }
 
 .navlink {
@@ -27,11 +28,11 @@
 }
 
 .navlink > * {
-    font-size: 24pt;
+    font-size: 20pt;
     font-weight: bold;
     color: #fff;
-    padding-left: 30px;
-    padding-right: 30px;
+    padding-left: 20px;
+    padding-right: 20px;
     line-height: 100px;
     display: inline-block;
 }
@@ -39,6 +40,20 @@
 .navlink a:hover, .footlink a:hover {
     color: #fff;
     background-color: #41727b;
+}
+
+#name {
+    font-family: Oswald;
+}
+
+#name > a {
+    font-size: 36pt;
+    color: #eef;
+}
+
+#name > a:hover {
+    color: #eef;
+    background-color: #000;
 }
 
 

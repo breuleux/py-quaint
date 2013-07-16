@@ -610,7 +610,7 @@ def meta(engine, node, defs):
         raise ImportError("yaml is not installed!")
     results = pyyaml.safe_load(defs.raw())
     if isinstance(results, str):
-        return GenFrom('meta', lambda doc: str(doc.get(results, "")))
+        return GenFrom('meta', lambda doc: str(doc.get(results, "") or ""))
     elif isinstance(results, dict):
         return Gen(*[GenFor('meta', k, v) for k, v in results.items()])
     else:

@@ -83,11 +83,11 @@ least safe function in the environment.
 
 All the functions in the environment of `bare_engine() are safe.
 
+python %
     engine.extend_environment(
         meta = lib.meta,
         yaml = lib.yaml,
-        json = lib.json,
-        csv = lib.csv)
+        json = lib.json)
 
 These are functions you can safely make available. Quaint uses
 `yaml.safe_load to load YAML, so there can't be any surprises.

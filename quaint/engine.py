@@ -645,7 +645,9 @@ class List(PartsGenerator):
         if o:
             if type is None: type = "1"
             if start is None: start = 1
-            otag = '<ol type="{type}" start="{start}">'.format(type=type, start=start)
+            otag = '<ol type="{type}" start="{start}">'.format(
+                type = cgi.escape(type, True),
+                start = int(start))
             ctag = '</ol>'
         else:
             otag = "<ul>"

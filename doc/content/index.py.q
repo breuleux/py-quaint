@@ -1,6 +1,6 @@
 
 {meta}:
-  title: Quaint
+  title: 
   author: Olivier Breuleux
 
 {use_asset}: script/tabs.js
@@ -93,6 +93,8 @@ to their own individual needs.
 Quaint's file extension is `[.q]. As you might already have guessed,
 all of this documentation is written in Quaint. At the bottom of each
 page, there should be a link pointing to its source code.
+
+See also [this post]::http://breuleux.net/blog/quaint.html.
 
 
 Installing

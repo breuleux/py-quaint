@@ -7,6 +7,8 @@
 For the time being the following two topics are documented. More will
 follow, but these are arguably the basics.
 
-* @@Syntax
-* [Extending Quaint]@@extending
+* Overview of the syntax @@ Syntax
+* Extending Quaint @@ extending
+* Building a safe engine @@ safety
+
 

@@ -14,7 +14,8 @@ html ..
       engine["maybe text @@ link"] = site_link
     }
     #nav ..
-      logo <- {Raw('<img src="%sassets/media/quaint.png" alt="Quaint" height="74" />' % siteroot)}
+      logo <- {Raw("<img src='%sassets/media/quaint.png' alt='Quaint'/>" % siteroot)}
+      .navlink #name .. Quaint @@ index
       #logo .. {logo} @@ index
       .navlink #doc .. Doc @@ documentation
       .navlink #recipes .. Recipes @@ recipes/
