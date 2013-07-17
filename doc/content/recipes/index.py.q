@@ -39,6 +39,13 @@ counts as whitespace, but is omitted from output.
   Two ways of em[_pha]sis in
   the middle of a syl~_la~ble.
 
+You can define a label standing in for a link, and define the link
+associated to the label later:
+
+{show_and_run}:
+  Link::?x and [link more!]::?x
+  ?x :: #lists
+
 
 Lists
 -----

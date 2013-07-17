@@ -311,6 +311,25 @@ def link(engine, node, text, link = None):
                Markup('</a>'))
 
 @wrap_whitespace
+def qlink(engine, node, text, link = None):
+    if link is None or isinstance(link, ast.Void):
+        link = text
+    label = '?{0}'.format(format_anchor(link.raw()))
+    return Gen(Markup('<a href="'),
+               GenFrom('links', lambda links: (links or "") and links.get(label, "")),
+               Markup('">'),
+               engine(text),
+               Markup('</a>'))
+
+@wrap_whitespace
+def regqlink(engine, node, label, link = None):
+    if link is None or isinstance(link, ast.Void):
+        link = label
+    return GenFor('links',
+                  '?{0}'.format(format_anchor(label.raw())),
+                  plain_or_code(engine, link))
+
+@wrap_whitespace
 def anchor(engine, node, text, label):
     label = label.raw()
     return Gen(GenFor('links', label, '#' + label),
@@ -382,18 +401,33 @@ def show_as_and_run(lang):
 
 
 
+# def header_n(n):
+#     @wrap_whitespace
+#     def header(engine, node, title = None):
+#         if title is None:
+#             title, _ = node.args
+#         anchor = format_anchor(format_text(engine, title).strip())
+#         title = format_html(engine, title)
+#         return Gen(GenFor('links', anchor, '#'+anchor),
+#                    Markup('<h%s id="' % n),
+#                    Markup(anchor),
+#                    Markup('">'),
+#                    Section(anchor, Raw(title), n),
+#                    Markup("</h%s>" % n))
+#     return header
+
 def header_n(n):
     @wrap_whitespace
     def header(engine, node, title = None):
         if title is None:
             title, _ = node.args
         anchor = format_anchor(format_text(engine, title).strip())
-        title = format_html(engine, title)
         return Gen(GenFor('links', anchor, '#'+anchor),
+                   GenFor('sections', anchor, format_html(engine, title), n),
                    Markup('<h%s id="' % n),
                    Markup(anchor),
                    Markup('">'),
-                   Section(anchor, Raw(title), n),
+                   engine(title),
                    Markup("</h%s>" % n))
     return header
 

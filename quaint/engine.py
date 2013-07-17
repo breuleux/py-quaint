@@ -546,7 +546,7 @@ class TOCGenerator(Generator):
             results += ['<a href="#',
                         s.name,
                         '">',
-                        s.contents.data,
+                        s.contents,
                         "</a>"]
         if s.subsections:
             results.append("<ul>")

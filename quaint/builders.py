@@ -61,6 +61,9 @@ default_bindings = bare_bindings + [
     # Links
     ('text :: maybe link', 'link'),
     ('maybe text :: type : maybe link', 'special_link'),
+    ('?label :: maybe link', 'regqlink'),
+    ('text ::? maybe link', 'qlink'),
+    ('text :: ?link', 'qlink'),
 
     # Code
     ('maybe lang ` code', 'code'),
