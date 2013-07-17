@@ -292,6 +292,17 @@ Its meaning should be straightforward, save for a few things...
   will therefore generate "banana". Useful values and functions can be
   made available to embedded code that way.
 
+Just a note in passing: `engine.environment['__file__'], if it is
+defined, should contain the path of the file being
+generated. `engine.open(file) can be used to open files relative to
+that path.
+
+.tip ..
+  The `[__file__] environment variable contains the path of the Quaint
+  source file. In an extension, you can use `[engine.open(file)] to
+  open a file in the same directory.
+
+
 __Loading your extension:
 
 * On the __[command line], use the `-x option with the `quaint

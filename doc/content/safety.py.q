@@ -56,10 +56,10 @@ python %
     engine['maybe lang ` code'] = lib.code
     engine['maybe lang % code'] = lib.code_block
     engine['* item'] = lib.ulist
-    engine['maybe start # item] = lib.olist
-    engine['term := definition] = lib.dlist
-    engine['+ row] = lib.table_header
-    engine['| row] = lib.table_row
+    engine['maybe start # item'] = lib.olist
+    engine['term := definition'] = lib.dlist
+    engine['+ row'] = lib.table_header
+    engine['| row'] = lib.table_row
     engine['maybe source >> quote'] = lib.quote
     engine['maybe left ;; right'] = lib.ignore
     engine['cond ?? yes'] = lib.ifthenelse
@@ -101,7 +101,8 @@ python %
 
 The current implementation of `link allows for arbitrary Python code
 execution because it checks if the right hand side is `{}, and if so,
-it evaluates it and takes the return value as the value of the link. I
+it evaluates it and takes the return value as the value of the link
+(it will do so even if `{} is not bound to anything in the engine!). I
 will fix that in time so that it can't do anything the engine won't
 allow, but right now you'll have to implement something safe yourself.
 

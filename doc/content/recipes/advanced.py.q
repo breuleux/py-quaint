@@ -85,11 +85,6 @@ file.
 
 Link@@recipes/subdoc to the included file.
 
-.tip ..
-  The `[__file__] environment variable contains the path of the Quaint
-  source file. Use `[engine.open(file)] to open a file in the same
-  directory.
-
 
 Wrappers
 --------
