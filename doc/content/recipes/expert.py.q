@@ -46,7 +46,7 @@ their titles:
 .sar-vstack ..
   {show_and_run}:
     {genfrom("globalinfo")}:
-      row <- | {path} | {title}::{link} |
+      row <- | {path} | {title}::={link} |
       {
         AutoMerge([engine(row,
                           path = path,
@@ -56,7 +56,7 @@ their titles:
       }
 
 `siteroot is an environment variable that you can set with the `[-e]
-flag to the `quaint command. See the Makefile::{ghurl + 'doc/Makefile'}
+flag to the `quaint command. See the Makefile::={ghurl}doc/Makefile
 for this site.
 
 Mind that the markup in a `[{genfrom(...)}:] block can only generate

@@ -1,7 +1,7 @@
 
 from os.path import join as pj
 from .engine import Once
-from .lib import link_type, plain_or_code, Gen, GenFor
+from .lib import link_type, Gen, GenFor
 from .builders import HTMLMetaNode
 from .ast import source_nows
 from .util import format_anchor
@@ -12,7 +12,7 @@ def use_assets(engine, path = 'assets/'):
     @link_type('media')
     def media_link(engine, node, text, link):
         return {'tag': 'img',
-                'src': pj(path, 'media', plain_or_code(engine, link)),
+                'src': pj(path, 'media', link.raw()), #plain_or_code(engine, link)),
                 'alt': text.raw(),
                 'body': ''}
 
@@ -41,8 +41,8 @@ def siteroot(engine, root = '/'):
 
     @link_type('site')
     def site_link(engine, node, text, link):
-        link = plain_or_code(engine, link)
-        return {'href': format_site_link(link)}
+        #link = plain_or_code(engine, link)
+        return {'href': format_site_link(link.raw())}
 
     def format_site_link(link, raw = False):
         if not raw:

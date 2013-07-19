@@ -21,17 +21,27 @@ except ImportError:
 def create_pattern(ptree, properties):
 
     if isinstance(ptree, str):
+        properties = set(properties)
         ptree = ptree.strip()
 
-        if properties == ['maybe']:
-            return ptree
+        if 'shed' in properties:
+            properties.remove('shed')
+            shed = True
+        elif 'shed1' in properties:
+            properties.remove('shed1')
+            shed = 1
+        else:
+            shed = False
 
-        elif properties == []:
+        if properties == {'maybe'}:
+            f = None
+
+        elif properties == set():
             def not_void(x):
                 return not isinstance(x, ast.Void)
             f = not_void
 
-        elif properties == ['void']:
+        elif properties == {'void'}:
             def is_void(x):
                 return isinstance(x, ast.Void)
             f = is_void
@@ -39,7 +49,31 @@ def create_pattern(ptree, properties):
         else:
             raise Exception("Illegal properties or mix of properties", properties)
 
-        return (f, ptree)
+        if shed is True:
+            def shedder(x):
+                while ast.is_square_bracket(x):
+                    x = x.args[1]
+                if f is None or f(x):
+                    return {ptree: x}
+                else:
+                    return {}
+            return shedder
+
+        elif shed == 1:
+            def shedder(x):
+                if ast.is_square_bracket(x):
+                    x = x.args[1]
+                if f is None or f(x):
+                    return {ptree: x}
+                else:
+                    return {}
+            return shedder
+
+        elif f is None:
+            return ptree
+
+        else:
+            return (f, ptree)
 
     elif isinstance(ptree, ast.Op):
 
@@ -47,6 +81,8 @@ def create_pattern(ptree, properties):
             ptree = ptree.args[1]
 
         if ptree.operator:
+            if 'shed' in properties or 'shed1' in properties:
+                raise Exception("Bad positioning for property shed or shed1.")
 
             if 'wide' in properties: wide = True
             elif 'short' in properties: wide = False
@@ -60,7 +96,9 @@ def create_pattern(ptree, properties):
             return (descr, [create_pattern(sub, []) for sub in ptree.args])
 
         else:
-            properties = [arg.strip() for arg in ptree.args[:-1]]
+            properties = []
+            for arg in ptree.args[:-1]:
+                properties += arg.strip().split()
             return create_pattern(ptree.args[-1], properties)
 
     elif isinstance(ptree, ast.Void):
@@ -718,7 +756,11 @@ class Table(PartsGenerator):
             header = isinstance(cells, TableHeader)
             yield Markup("<tr>")
             for cell in cells:
-                yield Markup("<th>" if header else "<td>")
+                if hasattr(cell, 'colspan'):
+                    yield Markup(("<th %s>" if header else "<td %s>")
+                                 % ('colspan="%s"' % cell.colspan))
+                else:
+                    yield Markup("<th>" if header else "<td>")
                 yield cell
                 yield Markup("</th>" if header else "</td>")
             yield Markup("</tr>")

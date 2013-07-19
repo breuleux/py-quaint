@@ -46,6 +46,14 @@ associated to the label later:
   Link::?x and [link more!]::?x
   ?x :: #lists
 
+You can parametrize links with variables if you use `[::=] instead of
+`[::]
+
+.sar-vstack ..
+  {show_and_run}:
+    {root = "http://breuleux.net/quaint"}
+    [Link to documentation]::={root}/documentation.html
+
 
 Lists
 -----

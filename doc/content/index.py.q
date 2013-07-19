@@ -160,7 +160,7 @@ structure will be preserved.
 * If Quaint finds a file called `[@template.q] or `[@template.py.q],
   it will use it as a template to generate all the documents in the
   directory (and subdirectories, unless they contain their own
-  template files). The [default template]::{ghurl + "quaint/default_template.q"}
+  template files). The [default template]::={ghurl}quaint/default_template.q
   shows the basic required assembly (putting together the various
   independent "tracks" various parts of the document contribute to).
 
@@ -189,7 +189,7 @@ Learn more
 
 * @@Documentation (more in-depth, but still a work in progress).
 
-* Read [lib.py]::{ghurl + "quaint/lib.py"}. It's kinda messy and
+* Read [lib.py]::={ghurl}quaint/lib.py. It's kinda messy and
   undocumented right now, but a lot of the functionality is defined
   there, and most code is straightforward, so it's a good starting
   point. As a rule of thumb, when you see functionality where the

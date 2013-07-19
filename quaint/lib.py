@@ -251,14 +251,14 @@ quote = parts_wrapper(('source', 'quote'),
                            classes = 'quote'))
 
 
-def plain_or_code(engine, node):
-    if ast.is_curly_bracket(node):
-        return str(pyeval(node.args[1].raw(), engine.environment))
-    elif ast.is_square_bracket(node):
-        x = node.args[1]
-        return x.raw()
-    else:
-        return node.raw()
+# def plain_or_code(engine, node):
+#     if ast.is_curly_bracket(node):
+#         return str(pyeval(node.args[1].raw(), engine.environment))
+#     elif ast.is_square_bracket(node):
+#         x = node.args[1]
+#         return x.raw()
+#     else:
+#         return node.raw()
 
 
 def parse_link(link):
@@ -266,7 +266,11 @@ def parse_link(link):
         return Escaped(link)
     else:
         def get(links):
-            return links.get(format_anchor(link), link)
+            if links is None:
+                print(link)
+                return "blafagla"
+            else:
+                return links.get(format_anchor(link), link)
         return GenFrom('links', get)
 
 
@@ -283,7 +287,7 @@ def link_type(type):
 @link_type('image')
 def image_link(engine, node, text, link):
     return {'tag': 'img',
-            'src': plain_or_code(engine, link),
+            'src': link.raw(), #plain_or_code(engine, link),
             'alt': text.raw()}
 
 @wrap_whitespace
@@ -305,7 +309,18 @@ def link(engine, node, text, link = None):
     if link is None or isinstance(link, ast.Void):
         link = text
     return Gen(Markup('<a href="'),
-               parse_link(plain_or_code(engine, link)),
+               # parse_link(plain_or_code(engine, link)),
+               parse_link(link.raw()),
+               Markup('">'),
+               engine(text),
+               Markup('</a>'))
+
+@wrap_whitespace
+def elink(engine, node, text, link = None):
+    if link is None or isinstance(link, ast.Void):
+        link = text
+    return Gen(Markup('<a href="'),
+               parse_link(format_text(engine, link)),
                Markup('">'),
                engine(text),
                Markup('</a>'))
@@ -327,7 +342,7 @@ def regqlink(engine, node, label, link = None):
         link = label
     return GenFor('links',
                   '?{0}'.format(format_anchor(label.raw())),
-                  plain_or_code(engine, link))
+                  link.raw())
 
 @wrap_whitespace
 def anchor(engine, node, text, label):
@@ -341,8 +356,8 @@ def anchor(engine, node, text, label):
 
 def extract_and_codehl(lang, code, do_dedent = True, unescape_brackets = False):
 
-    if ast.is_square_bracket(code):
-        wsl, code, wsr = code.args
+    # if ast.is_square_bracket(code):
+    #     wsl, code, wsr = code.args
 
     if isinstance(lang, ast.Void):
         lang = "text"

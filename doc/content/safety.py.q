@@ -53,8 +53,11 @@ engine that the pattern certainly starts with `[=], so it can optimize
 things a bit. `header1 through `header6 are safe.
 
 python %
-    engine['maybe lang ` code'] = lib.code
+    engine['maybe lang ` shed1 code'] = lib.code
     engine['maybe lang % code'] = lib.code_block
+    engine['text :: maybe shed1 link'] = lib.link
+    engine['text :: type : maybe shed1 link'] = lib.special_link
+    engine['text ::= maybe shed1 link'] = lib.elink
     engine['* item'] = lib.ulist
     engine['maybe start # item'] = lib.olist
     engine['term := definition'] = lib.dlist
@@ -95,16 +98,19 @@ These are functions you can safely make available. Quaint uses
 
 == __Not safe
 
-python %
-    engine['text :: maybe link'] = lib.link
-    engine['text :: type : maybe link'] = lib.special_link
+;;
+  Safe now
 
-The current implementation of `link allows for arbitrary Python code
-execution because it checks if the right hand side is `{}, and if so,
-it evaluates it and takes the return value as the value of the link
-(it will do so even if `{} is not bound to anything in the engine!). I
-will fix that in time so that it can't do anything the engine won't
-allow, but right now you'll have to implement something safe yourself.
+  python %
+      engine['text :: maybe link'] = lib.link
+      engine['text :: type : maybe link'] = lib.special_link
+  
+  The current implementation of `link allows for arbitrary Python code
+  execution because it checks if the right hand side is `{}, and if so,
+  it evaluates it and takes the return value as the value of the link
+  (it will do so even if `{} is not bound to anything in the engine!). I
+  will fix that in time so that it can't do anything the engine won't
+  allow, but right now you'll have to implement something safe yourself.
 
 python %
     engine['maybe tag .. maybe body'] = lib.domnode

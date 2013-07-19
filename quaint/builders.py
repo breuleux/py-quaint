@@ -59,14 +59,15 @@ default_bindings = bare_bindings + [
     ('__ expr', 'strong'),
 
     # Links
-    ('text :: maybe link', 'link'),
-    ('maybe text :: type : maybe link', 'special_link'),
-    ('?label :: maybe link', 'regqlink'),
-    ('text ::? maybe link', 'qlink'),
+    ('text :: maybe shed1 link', 'link'),
+    ('maybe text :: type : maybe shed1 link', 'special_link'),
+    ('?label :: maybe shed1 link', 'regqlink'),
+    ('text ::? maybe shed1 link', 'qlink'),
     ('text :: ?link', 'qlink'),
+    ('text ::= maybe link', 'elink'),
 
     # Code
-    ('maybe lang ` code', 'code'),
+    ('maybe lang ` shed1 code', 'code'),
     ('maybe lang % code', 'code_block'),
 
     # Headers
@@ -95,8 +96,8 @@ default_bindings = bare_bindings + [
     ('maybe tag .. maybe body', 'domnode'),
     ('wide [maybe source >> quote]', 'quote'),
     ('maybe left ;; right', 'ignore'),
-    ('name <- body', 'setvar'),
-    ('name <= file', 'load_in_var'),
+    ('name <- shed1 body', 'setvar'),
+    ('name <= shed1 file', 'load_in_var'),
     ('name <= [maybe type] :: file', 'load_in_var'),
 
     ]

@@ -164,7 +164,9 @@ The pattern language is parsed like Quaint, which creates a kind of
 mini parse tree. A leaf that's a word (alphanumeric, and _[no
 underscores! Underscores are operators!]) will be interpreted as a
 variable matching a subtree. Patterns can also be _specified using the
-words `wide, `narrow, `line, `inline, `void and `maybe.
+words `wide, `narrow, `line, `inline, `void, `maybe, `shed and `shed1
+(application of the latter two is sort of limited at the moment,
+though).
 
 You can use square brackets in a pattern for grouping, but patterns
 _[do not penetrate] square brackets. If a node contains `[]s, the
@@ -220,6 +222,7 @@ apply to:
       - ["x / y + z", "x / y / z"]
       - ["x / y+z"]
       - The `wide instruction applies to `y
+
 
 {css}:
   .pattx {padding-left: 5px; padding-right: 5px; border: 1px solid #888}

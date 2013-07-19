@@ -11,7 +11,7 @@ html ..
 
   body ..
     {
-      engine["maybe text @@ link"] = site_link
+      engine["maybe text @@ shed1 link"] = site_link
     }
     #nav ..
       logo <- {Raw("<img src='%sassets/media/quaint.png' alt='Quaint'/>" % siteroot)}
