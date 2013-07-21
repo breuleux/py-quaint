@@ -52,12 +52,6 @@ class Location(object):
         self.tokens = tokens
         self._linecol = None
 
-    # def __nonzero__(self):
-    #     return True
-
-    # def __len__(self):
-    #     return self.span[1] - self.span[0]
-
     def get(self):
         return self.source.substring(self.start, self.end)
 
@@ -157,34 +151,6 @@ class Locations:
                     recurse(self.locations[0].source)] + locations
         return []
         
-
-
-# def merge_locations(locations):
-#     """
-#     Handy function to merge *contiguous* locations. (note: assuming
-#     that you gave a, b, c in the right order, merge_locations(a, b, c)
-#     does the same thing as merge_locations(a, c). However, a future
-#     version of the function might differentiate them, so *don't do
-#     it*)
-
-#     TODO: it'd be nice to have a class for discontinuous locations, so
-#     that you could highlight two tokens on the same line that are not
-#     next to each other. Do it if a good use case arise.
-#     """
-#     locations = list(sorted(loc for loc in locations if loc))
-#     print([l.start for l in locations])
-#     # locations = [loc for loc in locations if loc]
-#     if not locations:
-#         return Location("", (0, 0), [])
-#         #raise Exception("You must merge at least one location!")
-#     loc1, loc2 = locations[0], locations[-1]
-#     # locations should be in the same source
-#     assert all(loc1.source is l.source for l in locations[1:])
-#     return Location(source = loc1.source,
-#                     span = (loc1.span[0], loc2.span[1]),
-#                     tokens = reduce(list.__add__, (list(l.tokens) for l in locations if l.tokens is not None), []))
-
-
 
 def merge_locations(locations):
     """
